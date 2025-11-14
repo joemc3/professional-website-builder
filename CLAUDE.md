@@ -17,6 +17,16 @@ Detailed specifications are located in `project_standards/`:
 
 ## CRITICAL NOTES
 
+### 🚨 AUTONOMOUS DEVELOPMENT MODE
+**UNTIL FURTHER NOTICE (until this note is removed): Make all implementation decisions independently.**
+- Research and choose appropriate libraries, patterns, and solutions without asking
+- Make architectural decisions based on best practices and the specifications
+- Only interact with the user for critical blockers or fundamental requirement clarifications
+- Goal: Deliver MVP+ (all features from Phase 1-4 in IMPLEMENTATION_PLAN.md) with minimal user interaction
+- Use your judgment and expertise - the specifications provide the requirements, you determine the implementation details
+
+When this mode is complete, this note will be removed from the file.
+
 ### Security: .gitignore Maintenance
 **ALWAYS check and update `.gitignore` when adding new frameworks, libraries, or components.** Ensure that:
 - Environment files (`.env`, `.env.local`, etc.) are excluded
