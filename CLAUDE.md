@@ -10,6 +10,17 @@ This is a **containerized web application** for generating professional portfoli
 
 > **Note**: This project was originally a Tauri desktop application and has been completely migrated to a web-based architecture. The desktop version still exists in `src-tauri/` but is deprecated.
 
+## Code Statistics
+
+- **Total Source Files**: 99
+- **Languages**:
+  - **Rust**: 8 files, ~1,318 lines
+  - **TypeScript**: 55 files, ~4,853 lines
+  - **JavaScript**: 6 files, ~149 lines
+  - **CSS**: ~266 lines
+  - **Documentation**: 12 Markdown files
+- **Total Lines of Code**: ~6,586
+
 ## Documentation
 
 ### Primary Documentation
