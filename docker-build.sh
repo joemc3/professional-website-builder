@@ -45,7 +45,7 @@ build_image() {
 
 # Build API (Rust backend)
 echo "═════════════════════════════════════════════════════"
-build_image "api" "./src-tauri" "./src-tauri/Dockerfile" || exit 1
+build_image "api" "./src-api" "./src-api/Dockerfile" || exit 1
 echo ""
 
 # Build Frontend (React + Nginx)
