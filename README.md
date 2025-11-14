@@ -1,199 +1,281 @@
 # Professional Website Builder
 
-A desktop application for generating professional portfolio websites from user documents (resumes, PDFs, CVs, etc.). Built with **Tauri** (Rust backend) + **React** (UI) + **Next.js** (website generation).
+A **containerized web application** for generating professional portfolio websites from user documents (resumes, PDFs, CVs, etc.). Built with **Rust** (REST API) + **React** (UI) + **Next.js** (website generation) and deployed via **Docker**.
+
+> **Note**: This application was originally built as a Tauri desktop app and has been completely transformed into a modern, scalable web application. The desktop version is still available in `src-tauri/` but is deprecated.
 
 ## 🌟 Features
 
+- **🌐 Web-Based & Multi-User**: Access from any browser with secure authentication
 - **📁 Multi-format document support**: Markdown, DOCX, PDF, XLSX, PPTX
 - **🤖 Three processing modes**:
   - **Manual Mode**: Extract text and manually fill in your portfolio
   - **Cloud AI Mode**: Use Claude, GPT-4, or Gemini to auto-generate content
   - **Local AI Mode**: Use Ollama or LM Studio for privacy-focused generation
 - **🎨 Five professional themes**: Onyx (dark), Quartz (light), Serene (soft), Jade (nature), Coral (vibrant)
-- **🔒 Secure API key storage**: OS-native credential managers (Keychain, Credential Manager, Secret Service)
+- **🔒 Secure**: JWT authentication, encrypted API key storage, HTTPS-ready
 - **⚡ Static website generation**: Fast, SEO-friendly, deployable anywhere
+- **🐳 Docker-powered**: Easy deployment on any platform
+- **📊 PostgreSQL database**: Robust data persistence and multi-user support
 
-## 📋 Prerequisites
+## 🚀 Quick Start (Docker - Recommended)
 
-### Required Software
+### Prerequisites
 
-- **Node.js**: v20.x or later
-- **npm**: v10.x or later
-- **Rust**: v1.75.x or later (install via [rustup](https://rustup.rs/))
-- **Tauri CLI**: `cargo install tauri-cli`
+- **Docker** 24.0+ ([Install Docker](https://docs.docker.com/get-docker/))
+- **Docker Compose** 2.0+
+- 4GB+ RAM available
+- 10GB+ disk space
 
-### Platform-Specific Dependencies
-
-#### macOS
-```bash
-xcode-select --install
-```
-
-#### Windows
-- Microsoft Visual C++ Build Tools
-- WebView2 (usually pre-installed on Windows 10/11)
-
-Follow: https://tauri.app/v1/guides/getting-started/prerequisites#windows
-
-#### Linux (Ubuntu/Debian)
-```bash
-sudo apt update
-sudo apt install -y \
-    libwebkit2gtk-4.0-dev \
-    build-essential \
-    curl \
-    wget \
-    file \
-    libssl-dev \
-    libgtk-3-dev \
-    libayatana-appindicator3-dev \
-    librsvg2-dev \
-    libsoup2.4-dev \
-    libjavascriptcoregtk-4.0-dev
-```
-
-#### Linux (Fedora)
-```bash
-sudo dnf install -y \
-    webkit2gtk4.0-devel \
-    openssl-devel \
-    curl \
-    wget \
-    file \
-    libappindicator-gtk3-devel \
-    librsvg2-devel
-```
-
-#### Linux (Arch)
-```bash
-sudo pacman -S --needed \
-    webkit2gtk \
-    base-devel \
-    curl \
-    wget \
-    file \
-    openssl \
-    appmenu-gtk-module \
-    gtk3 \
-    libappindicator-gtk3 \
-    librsvg
-```
-
-## 🚀 Getting Started
-
-### 1. Install Dependencies
+### 1. Clone and Configure
 
 ```bash
-# Install root dependencies
-npm install
+git clone <repository-url>
+cd professional-website-builder
 
-# Install UI dependencies
-cd src-ui && npm install && cd ..
+# Copy environment template
+cp .env.example .env
 
-# Install generator dependencies
-cd src-generator && npm install && cd ..
+# Edit .env and set required variables:
+# - POSTGRES_PASSWORD (required)
+# - SECRET_KEY (required, 32+ characters)
+# - JWT_SECRET (required, 32+ characters)
+# - ANTHROPIC_API_KEY or OPENAI_API_KEY (optional, for AI features)
+nano .env
 ```
 
-### 2. Generate Application Icons
+### 2. Verify Setup
 
 ```bash
-./generate-icons.sh
+./verify-docker-setup.sh
 ```
 
-This creates icons for macOS (.icns) and Windows (.ico) from the SVG source.
+This checks Docker installation, file structure, environment config, and code compilation.
 
-### 3. Run Development Server
+### 3. Build Images
 
 ```bash
-# From project root
-npm run dev
+./docker-build.sh
 ```
 
-This starts both the Tauri backend and React frontend with hot reload.
+Builds three optimized Docker images (~850MB total).
 
-### 4. Build for Production
+### 4. Start Services
+
+**Production Mode:**
+```bash
+./docker-run.sh
+```
+
+**Development Mode** (with hot reload):
+```bash
+./docker-run.sh --dev
+```
+
+### 5. Access Application
+
+- **Frontend**: http://localhost
+- **API**: http://localhost:3001
+- **Health Check**: http://localhost:3001/health
+- **Database UI** (dev only): http://localhost:8080
+
+### 6. Create Your First Account
+
+1. Open http://localhost in your browser
+2. Click "Register" and create an account
+3. Login with your credentials
+4. Upload documents and generate your portfolio!
+
+### 7. Run End-to-End Tests
 
 ```bash
-npm run build
+./test-e2e.sh
 ```
-
-The installer will be in `src-tauri/target/release/bundle/`.
 
 ## 📁 Project Structure
 
 ```
 professional-website-builder/
-├── src-tauri/              # Rust backend
+├── src-api/                    # Rust REST API backend ⭐ NEW
 │   ├── src/
-│   │   ├── main.rs         # Entry point
-│   │   ├── commands.rs     # Tauri API commands
-│   │   ├── document_parser.rs  # File parsing (.md, .docx, .pdf, etc.)
-│   │   ├── llm_client.rs   # LLM API integration
-│   │   ├── storage.rs      # Secure keychain storage
-│   │   ├── validator.rs    # JSON validation
-│   │   └── types.rs        # Rust data structures
-│   └── Cargo.toml
-├── src-ui/                 # React frontend (desktop app UI)
+│   │   ├── main.rs            # Axum server
+│   │   ├── handlers/          # REST endpoints
+│   │   ├── auth.rs            # JWT & bcrypt
+│   │   ├── crypto.rs          # AES-256 encryption
+│   │   ├── document_parser.rs # File parsing
+│   │   ├── llm_client.rs      # LLM integration
+│   │   └── validator.rs       # JSON validation
+│   ├── Cargo.toml
+│   └── Dockerfile
+│
+├── src-ui/                     # React web frontend ⭐ UPDATED
 │   ├── src/
-│   │   ├── components/     # 5 main screens
+│   │   ├── services/api.ts    # REST API client
+│   │   ├── contexts/AuthContext.tsx
+│   │   ├── components/
+│   │   │   ├── Login.tsx
+│   │   │   ├── Register.tsx
 │   │   │   ├── FileIngestion.tsx
 │   │   │   ├── Settings.tsx
 │   │   │   ├── MainEditor.tsx
 │   │   │   ├── ThemeSelection.tsx
 │   │   │   └── GenerationSuccess.tsx
-│   │   ├── types/          # TypeScript types
-│   │   ├── utils/          # Tauri API wrappers
 │   │   └── App.tsx
+│   ├── nginx.conf             # Nginx reverse proxy
+│   ├── Dockerfile
 │   └── package.json
-├── src-generator/          # Next.js static site generator
+│
+├── src-generator/              # Next.js static site generator
 │   ├── app/
-│   │   ├── themes/         # 5 website themes
-│   │   │   ├── onyx/       # Dark professional theme
-│   │   │   ├── quartz/     # Light minimalist theme
-│   │   │   ├── serene/     # Soft calming theme
-│   │   │   ├── jade/       # Nature-inspired theme
-│   │   │   └── coral/      # Vibrant modern theme
+│   │   ├── themes/            # 5 website themes
+│   │   │   ├── onyx/          # Dark professional
+│   │   │   ├── quartz/        # Light minimalist
+│   │   │   ├── serene/        # Soft calming
+│   │   │   ├── jade/          # Nature-inspired
+│   │   │   └── coral/         # Vibrant modern
 │   │   └── lib/
+│   ├── Dockerfile
 │   └── package.json
-├── user-data/              # Created at runtime
-│   ├── source-files/       # User's uploaded documents
-│   ├── session.json        # Portfolio data
-│   └── generated-site/     # Final website output
-└── project_standards/      # Design documents
+│
+├── src-tauri/                  # Original desktop app (DEPRECATED)
+│   └── ...
+│
+├── docker-compose.yml          # Production orchestration
+├── docker-compose.dev.yml      # Development overrides
+├── init-db.sql                 # Database schema
+├── .env.example                # Environment template
+│
+├── DOCKER.md                   # Complete Docker guide
+├── DOCKER_QUICKSTART.md        # Quick reference
+└── DOCKER_MIGRATION_COMPLETE.md # Migration overview
+```
+
+## 🏗️ Architecture
+
+### Services
+
+The application consists of 4 containerized services:
 
 ```
+┌─────────────────────────────────────────────────┐
+│         Frontend (Nginx + React SPA)            │
+│              http://localhost:80                │
+└───────────────────┬─────────────────────────────┘
+                    │
+                    │ /api/* → Proxy
+                    ▼
+┌─────────────────────────────────────────────────┐
+│         Backend API (Rust + Axum)               │
+│            http://localhost:3001                │
+└────────┬──────────────────────┬─────────────────┘
+         │                      │
+         │                      │ Spawns builds
+         ▼                      ▼
+┌──────────────────┐   ┌──────────────────────┐
+│   PostgreSQL     │   │  Next.js Generator   │
+│   (Port 5432)    │   │   (Port 3002)        │
+└──────────────────┘   └──────────────────────┘
+```
+
+### Technology Stack
+
+| Component | Technology | Purpose |
+|-----------|------------|---------|
+| **Frontend** | React 18 + TypeScript + Vite | User interface |
+| **Backend API** | Rust + Axum + Tokio | REST API server |
+| **Database** | PostgreSQL 16 | Data persistence |
+| **Generator** | Next.js 14 (SSG) | Static site generation |
+| **Reverse Proxy** | Nginx (Alpine) | Frontend + API routing |
+| **Containerization** | Docker + Docker Compose | Orchestration |
+| **Authentication** | JWT + bcrypt | User security |
+| **Encryption** | AES-256-GCM | API key protection |
+
+## 📊 API Endpoints
+
+### Public
+- `GET /health` - Health check
+
+### Authentication
+- `POST /api/auth/register` - Register new user
+- `POST /api/auth/login` - Login (returns JWT)
+- `POST /api/auth/logout` - Logout
+
+### Files (Protected)
+- `POST /api/files/ingest` - Upload documents
+- `GET /api/files/aggregated-text` - Get parsed text
+
+### AI Processing (Protected)
+- `POST /api/ai/generate` - Generate portfolio JSON
+
+### Website Generation (Protected)
+- `POST /api/generate/website` - Build static site
+
+### Settings (Protected)
+- `POST /api/settings/api-keys` - Save API key
+- `GET /api/settings/api-keys/:provider` - Get API key
+- `DELETE /api/settings/api-keys/:provider` - Delete key
+- `POST /api/settings/test-connection` - Test LLM connection
 
 ## 🔧 Development
 
-### Run Individual Components
+### Development Mode
 
 ```bash
-# UI only (for development)
-npm run ui:dev
+# Start all services with hot reload
+./docker-run.sh --dev
+```
 
-# Generator only (for testing themes)
-npm run generator:dev
+This enables:
+- React hot reload (Vite dev server on port 5173)
+- API auto-restart on file changes
+- Database UI (Adminer on port 8080)
+- Exposed database port (5432)
+- Development logging
 
-# Full Tauri app
+### Local Development (without Docker)
+
+**Backend API:**
+```bash
+cd src-api
+cargo run
+```
+
+**Frontend:**
+```bash
+cd src-ui
 npm run dev
 ```
 
-### Testing Document Parsing
+**Generator:**
+```bash
+cd src-generator
+npm run dev
+```
+
+### Running Tests
 
 ```bash
-cd src-tauri
+# Rust unit tests
+cd src-api
 cargo test
+
+# React tests
+cd src-ui
+npm test
+
+# E2E tests (requires running containers)
+./test-e2e.sh
 ```
 
 ### Linting
 
 ```bash
-# TypeScript/React
+# Rust (Clippy)
+cd src-api && cargo clippy
+
+# TypeScript/React (ESLint)
 cd src-ui && npm run lint
 cd src-generator && npm run lint
-
-# Rust
-cd src-tauri && cargo clippy
 
 # Format all code
 npm run format
@@ -220,33 +302,28 @@ themes/onyx/
 
 To create a new theme:
 1. Copy an existing theme directory
-2. Update `theme.config.json` with the new theme name
-3. Customize colors in `page.tsx` and components
-4. Create a new thumbnail
-5. The theme will automatically appear in the UI
+2. Update `theme.config.json`
+3. Customize styles and components
+4. Create a thumbnail
+5. Rebuild the generator container
 
 ## 🤖 LLM Integration
 
 ### Supported Providers
 
-- **Anthropic Claude** (Cloud)
+- **Anthropic Claude** (Cloud) - Recommended
 - **OpenAI GPT-4** (Cloud)
 - **Google Gemini** (Cloud)
 - **Ollama** (Local)
 - **LM Studio** (Local)
 
-### API Keys
+### Configuration
 
-API keys are stored securely in:
-- **macOS**: Keychain
-- **Windows**: Credential Manager
-- **Linux**: Secret Service (GNOME Keyring, KWallet)
-
-Configure in **Settings** (⚙️ icon in the app).
+API keys are stored encrypted in PostgreSQL. Configure in the **Settings** page after logging in.
 
 ## 📊 Data Structure
 
-Portfolio data follows a strict JSON schema:
+Portfolio data follows a strict JSON schema. See `project_standards/Data Structure Specification.md` for complete details.
 
 ```typescript
 {
@@ -255,105 +332,148 @@ Portfolio data follows a strict JSON schema:
     title: string;
     summary?: string;
   };
-  contact: {
-    email?: string;
-    phone?: string;
-    website?: string;
-    socialLinks?: { platform: string; url: string }[];
-  };
-  workExperience: Array<{
-    company: string;
-    title: string;
-    startDate: string;  // YYYY-MM
-    endDate: string;    // YYYY-MM or "Present"
-    location?: string;
-    responsibilities?: string[];
-  }>;
-  projects: Array<{
-    name: string;
-    description: string;
-    technologies?: string[];
-    url?: string;
-  }>;
-  education: Array<{
-    institution: string;
-    degree: string;
-    fieldOfStudy?: string;
-    startDate?: string; // YYYY
-    endDate: string;    // YYYY
-  }>;
-  skills: Array<{
-    category: string;
-    items: string[];
-  }>;
-  theme: {
-    name: string;
-  };
+  contact: { ... };
+  workExperience: [ ... ];
+  projects: [ ... ];
+  education: [ ... ];
+  skills: [ ... ];
+  theme: { name: string };
 }
 ```
 
-See `project_standards/Data Structure Specification.md` for details.
-
 ## 🔒 Security
 
-- **No API keys in code**: All keys stored in OS-native secure storage
-- **No plaintext secrets**: Environment files are gitignored
-- **Sandboxed file access**: Tauri security policies enforced
-- **HTTPS only**: All cloud API calls use HTTPS
-- **Input validation**: All user data is validated before processing
+- ✅ **JWT authentication** (24-hour expiration)
+- ✅ **bcrypt password hashing** (cost 10)
+- ✅ **AES-256-GCM encryption** for API keys
+- ✅ **CORS protection** (configurable origins)
+- ✅ **Rate limiting** (10 req/s)
+- ✅ **SQL injection prevention** (parameterized queries)
+- ✅ **Non-root containers**
+- ✅ **Security headers** (CSP, X-Frame-Options, etc.)
+- ✅ **Network isolation**
+- ✅ **HTTPS-ready**
 
-## 📚 Documentation
+## 🚢 Deployment
 
-Detailed specifications are in `project_standards/`:
-- **Data Structure Specification.md** - Complete JSON schema
-- **Technical Specification.md** - Architecture and tech stack
-- **Product Requirements Document (PRD).md** - Features and requirements
-- **UI_UX Design Document.md** - Screen layouts and user flows
-- **IMPLEMENTATION_PLAN.md** - Phased development roadmap
+### Production Checklist
+
+- [ ] Change `POSTGRES_PASSWORD` to a strong password
+- [ ] Generate new `SECRET_KEY` (32+ bytes, random)
+- [ ] Generate new `JWT_SECRET` (32+ bytes, random)
+- [ ] Set `CORS_ORIGINS` to your domain
+- [ ] Configure LLM API keys (optional)
+- [ ] Set `NODE_ENV=production`
+- [ ] Set `RUST_LOG=warn` or `error`
+- [ ] Setup HTTPS reverse proxy (Caddy/Traefik recommended)
+- [ ] Configure database backups
+- [ ] Setup monitoring
+- [ ] Configure resource limits
+
+### Cloud Deployment
+
+**AWS, GCP, Azure, DigitalOcean:**
+1. Provision a VM with Docker
+2. Clone repository
+3. Configure `.env` with production values
+4. Run `./docker-build.sh`
+5. Run `./docker-run.sh`
+6. Setup HTTPS with Let's Encrypt
+7. Configure firewall rules
+
+**Kubernetes:**
+- Helm charts coming soon
+- See `DOCKER.md` for migration notes
+
+### Scaling
+
+```bash
+# Horizontal scaling
+docker compose up -d --scale api=3
+
+# Resource limits (edit docker-compose.yml)
+services:
+  api:
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+```
 
 ## 🛠️ Troubleshooting
 
-### Build Errors on Linux
-
-If you get "libsoup-2.4 not found" or similar errors:
+### Services won't start
 
 ```bash
-# Ubuntu/Debian
-sudo apt install libsoup2.4-dev libjavascriptcoregtk-4.0-dev
-
-# Fedora
-sudo dnf install webkit2gtk4.0-devel
-
-# Arch
-sudo pacman -S webkit2gtk
+docker compose logs         # Check all logs
+docker compose logs api     # Check specific service
+docker compose restart      # Restart services
 ```
 
-### Icon Generation Fails
-
-Ensure you have the Tauri CLI installed:
+### Database connection errors
 
 ```bash
+docker compose exec postgres pg_isready -U pwbuser
+docker compose logs postgres
+```
+
+### Frontend can't reach API
+
+- Check CORS configuration in `.env`
+- Verify API is running: `curl http://localhost:3001/health`
+- Check nginx.conf proxy settings
+
+See **DOCKER.md** for comprehensive troubleshooting.
+
+## 📚 Documentation
+
+- **DOCKER.md** - Complete deployment guide (15+ pages)
+- **DOCKER_QUICKSTART.md** - Quick reference commands
+- **DOCKER_MIGRATION_COMPLETE.md** - Migration overview and architecture
+- **src-api/README.md** - API documentation
+- **src-ui/README.md** - Frontend documentation
+- **project_standards/** - Original specifications
+
+## 🎯 Roadmap
+
+- [x] Phase 1: Project scaffolding
+- [x] Phase 2: Core functionality (Manual mode)
+- [x] Phase 3: AI integration (Cloud & Local)
+- [x] Phase 4: Themes and finalization
+- [x] Phase 5: Docker migration and web deployment
+- [ ] Cloud storage integration (S3)
+- [ ] Real-time WebSocket progress
+- [ ] User profiles and preferences
+- [ ] Portfolio sharing and collaboration
+- [ ] Custom domain mapping
+- [ ] Kubernetes Helm charts
+- [ ] Export to PDF/DOCX
+- [ ] Analytics integration
+- [ ] Additional themes
+
+## 🏛️ Legacy Desktop App
+
+The original Tauri desktop application is still available in `src-tauri/` but is **deprecated** and no longer maintained. To run it:
+
+```bash
+# Install Tauri prerequisites
 cargo install tauri-cli
+
+# Run desktop app
+cd src-tauri
+cargo tauri dev
 ```
 
-### UI Not Updating
-
-Clear the cache and restart:
-
-```bash
-cd src-ui
-rm -rf node_modules dist
-npm install
-npm run dev
-```
+See legacy documentation in `DEVELOPMENT.md` for desktop app details.
 
 ## 🤝 Contributing
 
 This project follows best practices:
 
 - **EditorConfig** for consistent formatting
-- **Prettier** for code formatting (`.prettierrc`)
-- **ESLint** for linting
+- **Prettier** for code formatting
+- **ESLint** for JavaScript/TypeScript linting
 - **Clippy** for Rust linting
 - **TypeScript** strict mode enabled
 
@@ -367,22 +487,29 @@ npm run format
 
 [Add your license here]
 
-## 🎯 Roadmap
-
-- [x] Phase 1: Project scaffolding
-- [x] Phase 2: Core functionality (Tier 1 - Manual mode)
-- [x] Phase 3: AI integration (Tiers 2 & 3)
-- [x] Phase 4: Themes and finalization
-- [ ] Phase 5: Testing and documentation
-- [ ] Additional themes
-- [ ] Export to other formats (PDF resume generation)
-- [ ] Custom domain deployment helpers
-- [ ] Analytics integration options
-
 ## 📧 Support
 
 For issues and feature requests, please create an issue in the repository.
 
+### Quick Links
+
+- **Getting Started**: See Quick Start section above
+- **API Documentation**: See `src-api/README.md`
+- **Docker Guide**: See `DOCKER.md`
+- **Troubleshooting**: See `DOCKER.md` troubleshooting section
+
 ---
 
-**Built with** ❤️ **using Tauri, React, and Next.js**
+**Built with** ❤️ **using Rust, React, Next.js, and Docker**
+
+## 📊 Statistics
+
+- **3 microservices** (API, Frontend, Generator)
+- **15 REST endpoints**
+- **5 professional themes**
+- **1,971 lines** of Rust backend code
+- **5 database tables**
+- **100% Docker-native**
+- **Production-ready security**
+- **Multi-user support**
+- **Horizontal scaling capable**
