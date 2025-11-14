@@ -1,0 +1,6 @@
+<svg width="400" height="300" xmlns="http://www.w3.org/2000/svg">
+  <rect width="400" height="300" fill="#0a0a0a"/>
+  <text x="200" y="120" font-family="Arial, sans-serif" font-size="32" font-weight="bold" fill="#60a5fa" text-anchor="middle">Onyx Theme</text>
+  <text x="200" y="160" font-family="Arial, sans-serif" font-size="16" fill="#5eead4" text-anchor="middle">Dark Professional Portfolio</text>
+  <text x="200" y="200" font-family="Arial, sans-serif" font-size="14" fill="#9ca3af" text-anchor="middle">400 x 300 px</text>
+</svg>

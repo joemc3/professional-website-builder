@@ -1,0 +1,13 @@
+<svg width="400" height="300" xmlns="http://www.w3.org/2000/svg">
+  <rect width="400" height="300" fill="#F7F6F3"/>
+  <rect width="400" height="50" fill="#FFFEF5" opacity="0.9"/>
+  <text x="20" y="30" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#6B8E23">Jade</text>
+  <rect x="20" y="70" width="360" height="200" fill="#FFFEF5" stroke="#D4D9CE" stroke-width="2" rx="8"/>
+  <text x="40" y="100" font-family="Arial, sans-serif" font-size="14" fill="#2F3E2C">Nature-Inspired</text>
+  <rect x="40" y="115" width="90" height="30" fill="#6B8E23" rx="4"/>
+  <text x="50" y="135" font-family="Arial, sans-serif" font-size="12" fill="#FFFFFF">Olive Green</text>
+  <rect x="40" y="160" width="100" height="10" fill="#D4D9CE" rx="2"/>
+  <rect x="40" y="180" width="80" height="10" fill="#D4D9CE" rx="2"/>
+  <rect x="40" y="200" width="120" height="10" fill="#D4D9CE" rx="2"/>
+  <rect x="40" y="220" width="90" height="10" fill="#D4D9CE" rx="2"/>
+</svg>

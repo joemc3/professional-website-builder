@@ -17,11 +17,13 @@ out/
 
 # Build outputs
 dist/
+dist-ssr/
 build/
 *.app
 *.dmg
 *.msi
 *.exe
+*.local
 
 # Runtime user data
 user-data/

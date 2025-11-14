@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+dist/
+build/
+out/
+.next/
+target/
+
+# Tauri generated files
+src-tauri/target/
+src-tauri/Cargo.lock
+
+# User data
+user-data/
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
