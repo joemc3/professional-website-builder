@@ -92,6 +92,10 @@ uv run pytest tests/unit/ -v              # Unit tests (fast, no Docker needed)
 uv run pytest tests/integration/ -v       # Integration tests (needs Docker for PostgreSQL)
 uv run alembic upgrade head               # Run migrations
 
+# Worker — local development
+cd src-api
+uv run arq app.worker.WorkerSettings        # Run ARQ worker
+
 # Frontend — local development
 cd src-ui
 npm install && npm run dev                # Run admin app (port 5173)
@@ -108,14 +112,16 @@ npm run lint                              # Lint
 - `POST /api/auth/login` — Login (returns JWT)
 - `POST /api/auth/logout` — Logout (JWT required)
 - `GET /api/auth/me` — Get current user info (JWT required)
-
-### Planned (Phase 2+)
-
-**Document Repository** (protected):
-- `POST /api/documents` — Upload and parse one or more documents (multipart)
-- `GET /api/documents` — List all documents
+- `POST /api/documents` — Upload documents (multipart, returns processing status)
+- `GET /api/documents` — List all documents (optional status filter)
 - `GET /api/documents/:id` — Get document details and parsed text
-- `DELETE /api/documents/:id` — Remove document
+- `DELETE /api/documents/:id` — Remove document and file
+- `POST /api/settings/api-keys` — Save encrypted API key
+- `GET /api/settings/api-keys/:provider` — Check if API key is set
+- `DELETE /api/settings/api-keys/:provider` — Delete API key
+- `POST /api/settings/test-connection` — Test LLM provider connectivity
+
+### Planned (Phase 2b+)
 
 **Profile Synthesis** (protected):
 - `POST /api/profile/synthesize` — (Re)generate unified profile from all documents via LLM
@@ -140,18 +146,12 @@ npm run lint                              # Lint
 - `GET /api/job-postings` — List saved job postings
 - `DELETE /api/job-postings/:id` — Remove a job posting
 
-**Settings** (protected):
-- `POST /api/settings/api-keys` — Save encrypted API key
-- `GET /api/settings/api-keys/:provider` — Get API key
-- `DELETE /api/settings/api-keys/:provider` — Delete key
-- `POST /api/settings/test-connection` — Test LLM connection
-
 ## Database
 
 - Schema managed by Alembic migrations in `src-api/migrations/versions/`
 - Migrations run automatically on API startup (via `alembic upgrade head` in the lifespan hook)
-- **Current tables**: `users`
-- **Planned tables**: `documents`, `profiles`, `sites`, `job_postings`, `resumes`, `api_keys`
+- **Current tables**: `users`, `documents`, `api_keys`
+- **Planned tables**: `profiles`, `sites`, `job_postings`, `resumes`
 
 All tables use UUID primary keys and automatic timestamps.
 
@@ -226,14 +226,14 @@ Current design spec: `docs/superpowers/specs/2026-03-30-project-revival-design.m
 
 ## Current Phase
 
-**Phase 1 (Foundation) is complete.** Includes:
-- Python/FastAPI project scaffold
-- SQLAlchemy + Alembic database setup
-- Auth service (register, login, logout, me) — TDD
-- Docker Compose dev profile
-- Alembic migration on startup
+**Phase 2a (Document Pipeline) is complete.** Includes:
+- Document upload and storage (local filesystem)
+- Document parsing (5 formats: .md, .docx, .pdf, .xlsx, .pptx)
+- Background job processing via ARQ + Redis
+- API key encryption (AES-256-GCM) and management
+- Docker Compose with Redis and Worker services
 
-**Phase 2** is next: document repository, document parsing, profile synthesis.
+**Phase 2b** is next: LiteLLM integration, profile synthesis via SSE, profile editing.
 
 See `docs/superpowers/specs/2026-03-30-project-revival-design.md` for the full phase plan.
 

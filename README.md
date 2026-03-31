@@ -24,7 +24,16 @@ Professional Website Builder uses a **document repository model**: you upload ma
 | Admin app | React 18 / Vite |
 | Site generator | Next.js 14 |
 | Database | PostgreSQL 16 |
+| Background jobs | Redis + ARQ |
 | Deployment | Docker Compose |
+
+## Document Repository
+
+The core workflow: upload documents, let the system parse and index them, then generate professional outputs.
+
+Supported formats: Markdown, Word (.docx), PDF, Excel (.xlsx), PowerPoint (.pptx).
+
+Uploads return immediately with a job ID. Parsing runs in the background via ARQ + Redis — poll the document endpoint to check status.
 
 ## Quick Start
 
@@ -33,6 +42,8 @@ cp .env.example .env
 # Edit .env with your settings
 docker compose --profile dev up --build
 ```
+
+This starts the API, PostgreSQL, Redis, and the ARQ background worker.
 
 - Admin app: http://localhost:5173
 - API: http://localhost:8000
@@ -74,14 +85,15 @@ See `.env.example` for the full list.
 
 ## Current Status
 
-**Phase 1 is complete**: project foundation — Python/FastAPI API, authentication, health check endpoint, Docker dev profile with hot reload.
+**Phase 2a is complete**: document repository — upload, parse (5 formats), background processing via ARQ + Redis, API key management with AES-256-GCM encryption.
 
-Phases 2–4 are planned. See `docs/` for the full design spec.
+Phase 2b is next: LiteLLM integration and profile synthesis. See `docs/` for the full design spec.
 
 ## Roadmap
 
 - Phase 1: Foundation (complete)
-- Phase 2: Document Repository & AI Pipeline
+- Phase 2a: Document Repository & Parsing (complete)
+- Phase 2b: LiteLLM & Profile Synthesis
 - Phase 3: Sites & Resumes
 - Phase 4: Production Ready
 
