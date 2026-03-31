@@ -1,7 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
 
 from app.config import settings
+from app.database import async_session_factory
 
 app = FastAPI(
     title="Professional Website Builder API",
@@ -24,4 +26,9 @@ app.add_middleware(
 
 @app.get("/health")
 async def health_check():
-    return {"status": "ok"}
+    try:
+        async with async_session_factory() as session:
+            await session.execute(text("SELECT 1"))
+        return {"status": "ok", "database": "connected"}
+    except Exception:
+        return {"status": "degraded", "database": "disconnected"}
