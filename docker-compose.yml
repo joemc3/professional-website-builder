@@ -17,6 +17,16 @@ services:
     networks:
       - app-network
 
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+
   api:
     build:
       context: ./src-api
@@ -24,20 +34,47 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     environment:
       DATABASE_URL: postgresql+asyncpg://pwbuser:${POSTGRES_PASSWORD:-pwbpass}@postgres:5432/professional_website_builder
       JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
       SECRET_KEY: ${SECRET_KEY:-change-me-in-production}
+      REDIS_URL: redis://redis:6379
+      UPLOAD_DIR: /data/uploads
       SITE_URL: ${SITE_URL:-http://localhost:8080}
       ADMIN_URL: ${ADMIN_URL:-http://localhost:5173}
       CORS_ORIGINS: ${CORS_ORIGINS:-}
       LOG_LEVEL: ${LOG_LEVEL:-info}
+    volumes:
+      - uploads-data:/data/uploads
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
       interval: 10s
       timeout: 5s
       retries: 3
       start_period: 10s
+    networks:
+      - app-network
+
+  worker:
+    build:
+      context: ./src-api
+      dockerfile: Dockerfile
+    command: ["uv", "run", "arq", "app.worker.WorkerSettings"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+asyncpg://pwbuser:${POSTGRES_PASSWORD:-pwbpass}@postgres:5432/professional_website_builder
+      SECRET_KEY: ${SECRET_KEY:-change-me-in-production}
+      REDIS_URL: redis://redis:6379
+      UPLOAD_DIR: /data/uploads
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    volumes:
+      - uploads-data:/data/uploads
     networks:
       - app-network
 
@@ -50,6 +87,13 @@ services:
     ports:
       - "5432:5432"
 
+  redis-dev:
+    extends:
+      service: redis
+    profiles: ["dev"]
+    ports:
+      - "6379:6379"
+
   api-dev:
     extends:
       service: api
@@ -59,9 +103,20 @@ services:
     volumes:
       - ./src-api/app:/app/app
       - ./src-api/migrations:/app/migrations
+      - uploads-data:/data/uploads
     environment:
       LOG_LEVEL: debug
     command: ["uv", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+
+  worker-dev:
+    extends:
+      service: worker
+    profiles: ["dev"]
+    volumes:
+      - ./src-api/app:/app/app
+      - uploads-data:/data/uploads
+    environment:
+      LOG_LEVEL: debug
 
   frontend-dev:
     build:
@@ -82,6 +137,7 @@ services:
 
 volumes:
   postgres-data:
+  uploads-data:
 
 networks:
   app-network:
