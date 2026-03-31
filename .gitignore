@@ -53,5 +53,8 @@ user-data/
 # Superpowers brainstorm sessions
 .superpowers/
 
+# Git worktrees
+.worktrees/
+
 # Logs
 *.log
