@@ -1,48 +1,25 @@
-# Multi-stage build for React frontend
-FROM node:20-alpine as builder
-
+# Dev stage
+FROM node:20-alpine AS dev
 WORKDIR /app
-
-# Copy dependency manifests
-COPY package*.json ./
-
-# Install dependencies
-RUN npm ci --only=production=false
-
-# Copy source code
+COPY package.json package-lock.json* ./
+RUN npm install
 COPY . .
+EXPOSE 5173
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
 
-# Build the application
+# Build stage
+FROM node:20-alpine AS build
+WORKDIR /app
+COPY package.json package-lock.json* ./
+RUN npm install
+COPY . .
 RUN npm run build
 
-# Runtime stage with nginx
-FROM nginx:alpine
-
-# Copy custom nginx configuration
-COPY nginx.conf /etc/nginx/nginx.conf
-
-# Copy built assets from builder
-COPY --from=builder /app/dist /usr/share/nginx/html
-
-# Create nginx cache directories
-RUN mkdir -p /var/cache/nginx/client_temp \
-    /var/cache/nginx/proxy_temp \
-    /var/cache/nginx/fastcgi_temp \
-    /var/cache/nginx/uwsgi_temp \
-    /var/cache/nginx/scgi_temp \
-    && chown -R nginx:nginx /var/cache/nginx \
-    && chown -R nginx:nginx /usr/share/nginx/html \
-    && chmod -R 755 /usr/share/nginx/html
-
-# Switch to non-root user
-USER nginx
-
-# Expose port
+# Production stage
+FROM nginx:alpine AS prod
+COPY --from=build /app/dist /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 EXPOSE 80
-
-# Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD wget --quiet --tries=1 --spider http://localhost:80/health || exit 1
-
-# Start nginx
+    CMD wget --quiet --tries=1 --spider http://localhost:80/ || exit 1
 CMD ["nginx", "-g", "daemon off;"]

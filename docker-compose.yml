@@ -1,114 +1,88 @@
-version: '3.8'
-
 services:
-  # PostgreSQL Database
+  # === Shared service definitions ===
+
   postgres:
     image: postgres:16-alpine
-    container_name: pwb-postgres
-    restart: unless-stopped
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-professional_website_builder}
-      POSTGRES_USER: ${POSTGRES_USER:-pwbuser}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
-      PGDATA: /var/lib/postgresql/data/pgdata
+      POSTGRES_DB: professional_website_builder
+      POSTGRES_USER: pwbuser
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-pwbpass}
     volumes:
       - postgres-data:/var/lib/postgresql/data
-      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
-    networks:
-      - app-network
-    ports:
-      - "${POSTGRES_PORT:-5432}:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-pwbuser} -d ${POSTGRES_DB:-professional_website_builder}"]
-      interval: 10s
+      test: ["CMD-SHELL", "pg_isready -U pwbuser -d professional_website_builder"]
+      interval: 5s
       timeout: 5s
       retries: 5
-      start_period: 10s
-
-  # Rust Backend API
-  api:
-    build:
-      context: ./src-tauri
-      dockerfile: Dockerfile
-    container_name: pwb-api
-    restart: unless-stopped
-    environment:
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-pwbuser}:${POSTGRES_PASSWORD:-changeme}@postgres:5432/${POSTGRES_DB:-professional_website_builder}
-      - API_PORT=3001
-      - RUST_LOG=${RUST_LOG:-info}
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
-      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
-      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
-      - OLLAMA_URL=${OLLAMA_URL:-http://ollama:11434}
-      - NODE_ENV=production
-    volumes:
-      - user-data:/app/user-data
-      - ./src-generator:/app/src-generator:ro
     networks:
       - app-network
-    ports:
-      - "${API_PORT:-3001}:3001"
+
+  api:
+    build:
+      context: ./src-api
+      dockerfile: Dockerfile
     depends_on:
       postgres:
         condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+asyncpg://pwbuser:${POSTGRES_PASSWORD:-pwbpass}@postgres:5432/professional_website_builder
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
+      SECRET_KEY: ${SECRET_KEY:-change-me-in-production}
+      SITE_URL: ${SITE_URL:-http://localhost:8080}
+      ADMIN_URL: ${ADMIN_URL:-http://localhost:5173}
+      CORS_ORIGINS: ${CORS_ORIGINS:-}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
-      interval: 30s
-      timeout: 3s
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 10s
+      timeout: 5s
       retries: 3
-      start_period: 40s
+      start_period: 10s
+    networks:
+      - app-network
 
-  # React Frontend with Nginx
-  frontend:
+  # === Dev profile ===
+
+  postgres-dev:
+    extends:
+      service: postgres
+    profiles: ["dev"]
+    ports:
+      - "5432:5432"
+
+  api-dev:
+    extends:
+      service: api
+    profiles: ["dev"]
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./src-api/app:/app/app
+      - ./src-api/migrations:/app/migrations
+    environment:
+      LOG_LEVEL: debug
+    command: ["uv", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+
+  frontend-dev:
     build:
       context: ./src-ui
       dockerfile: Dockerfile
-    container_name: pwb-frontend
-    restart: unless-stopped
-    networks:
-      - app-network
+      target: dev
+    profiles: ["dev"]
     ports:
-      - "${FRONTEND_PORT:-80}:80"
-    depends_on:
-      api:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80/health"]
-      interval: 30s
-      timeout: 3s
-      retries: 3
-      start_period: 10s
-
-  # Next.js Generator (optional - can be run on-demand)
-  generator:
-    build:
-      context: ./src-generator
-      dockerfile: Dockerfile
-    container_name: pwb-generator
-    restart: unless-stopped
-    environment:
-      - NODE_ENV=production
-      - PORT=3002
+      - "5173:5173"
     volumes:
-      - user-data:/app/user-data
+      - ./src-ui/src:/app/src
+      - ./src-ui/public:/app/public
+    depends_on:
+      api-dev:
+        condition: service_healthy
     networks:
       - app-network
-    ports:
-      - "${GENERATOR_PORT:-3002}:3002"
-    healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3002/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
-      interval: 30s
-      timeout: 3s
-      retries: 3
-      start_period: 40s
+
+volumes:
+  postgres-data:
 
 networks:
   app-network:
     driver: bridge
-    name: pwb-network
-
-volumes:
-  postgres-data:
-    name: pwb-postgres-data
-  user-data:
-    name: pwb-user-data
