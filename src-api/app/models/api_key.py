@@ -21,6 +21,7 @@ class APIKey(Base):
     provider: Mapped[str] = mapped_column(String(50), nullable=False)
     encrypted_key: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
     nonce: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    selected_model: Mapped[str | None] = mapped_column(String(200), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
