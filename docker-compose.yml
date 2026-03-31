@@ -46,6 +46,8 @@ services:
       ADMIN_URL: ${ADMIN_URL:-http://localhost:5173}
       CORS_ORIGINS: ${CORS_ORIGINS:-}
       LOG_LEVEL: ${LOG_LEVEL:-info}
+      GENERATION_DIR: /data/generation
+      OUTPUT_DIR: /data/output
     volumes:
       - uploads-data:/data/uploads
     healthcheck:
@@ -73,8 +75,20 @@ services:
       REDIS_URL: redis://redis:6379
       UPLOAD_DIR: /data/uploads
       LOG_LEVEL: ${LOG_LEVEL:-info}
+      GENERATION_DIR: /data/generation
+      OUTPUT_DIR: /data/output
     volumes:
       - uploads-data:/data/uploads
+      - generation-data:/data/generation
+      - output-data:/data/output
+    networks:
+      - app-network
+
+  public-sites:
+    image: nginx:alpine
+    volumes:
+      - output-data:/data/output:ro
+      - ./nginx/sites.conf:/etc/nginx/conf.d/default.conf:ro
     networks:
       - app-network
 
@@ -115,6 +129,8 @@ services:
     volumes:
       - ./src-api/app:/app/app
       - uploads-data:/data/uploads
+      - generation-data:/data/generation
+      - output-data:/data/output
     environment:
       LOG_LEVEL: debug
 
@@ -135,9 +151,18 @@ services:
     networks:
       - app-network
 
+  public-sites-dev:
+    extends:
+      service: public-sites
+    profiles: ["dev"]
+    ports:
+      - "8080:80"
+
 volumes:
   postgres-data:
   uploads-data:
+  generation-data:
+  output-data:
 
 networks:
   app-network:
