@@ -127,20 +127,21 @@ npm run lint                              # Lint
 - `GET /api/profile` — Get current synthesized profile
 - `PUT /api/profile` — Replace profile data
 - `PATCH /api/profile` — Partial profile update (deep merge)
+- `PUT /api/auth/username` — Set/update username (JWT required)
+- `POST /api/job-postings` — Create/save job posting (JWT required)
+- `POST /api/job-postings/from-url` — Scrape URL, LLM extract, return draft (JWT required)
+- `POST /api/job-postings/from-text` — Parse pasted text, LLM extract, return draft (JWT required)
+- `GET /api/job-postings` — List all job postings (JWT required)
+- `GET /api/job-postings/:id` — Get single job posting (JWT required)
+- `PUT /api/job-postings/:id` — Update job posting (JWT required)
+- `DELETE /api/job-postings/:id` — Delete job posting (JWT required)
+- `POST /api/sites/portfolio` — Generate portfolio site (JWT required)
+- `POST /api/sites/targeted` — Generate targeted site for a job posting (JWT required)
+- `GET /api/sites` — List all sites with stale detection (JWT required)
+- `GET /api/sites/:id` — Get site details (JWT required)
+- `DELETE /api/sites/:id` — Delete targeted site and output files (JWT required)
 
-### Planned (Phase 2b+)
-
-**Profile Synthesis** (protected):
-- `POST /api/profile/synthesize` — (Re)generate unified profile from all documents via LLM
-- `GET /api/profile` — Get current synthesized profile
-- `PUT /api/profile` — Manually edit synthesized profile
-
-**Sites** (protected):
-- `POST /api/sites/portfolio` — Generate portfolio site from profile
-- `POST /api/sites/targeted` — Generate targeted site for a job posting
-- `GET /api/sites` — List all generated sites
-- `GET /api/sites/:slug` — Get site details
-- `DELETE /api/sites/:slug` — Remove a targeted site
+### Planned (Phase 3b+)
 
 **Resumes** (protected):
 - `POST /api/resumes/general` — Generate general resume PDF
@@ -148,17 +149,12 @@ npm run lint                              # Lint
 - `GET /api/resumes` — List all generated resumes
 - `GET /api/resumes/:id/download` — Download resume PDF
 
-**Job Postings** (protected):
-- `POST /api/job-postings` — Save a job posting for targeting
-- `GET /api/job-postings` — List saved job postings
-- `DELETE /api/job-postings/:id` — Remove a job posting
-
 ## Database
 
 - Schema managed by Alembic migrations in `src-api/migrations/versions/`
 - Migrations run automatically on API startup (via `alembic upgrade head` in the lifespan hook)
-- **Current tables**: `users`, `documents`, `api_keys`, `profiles`
-- **Planned tables**: `profiles`, `sites`, `job_postings`, `resumes`
+- **Current tables**: `users`, `documents`, `api_keys`, `profiles`, `job_postings`, `sites`
+- **Planned tables**: `resumes`
 
 All tables use UUID primary keys and automatic timestamps.
 
@@ -198,6 +194,10 @@ OPENAI_API_KEY=
 GEMINI_API_KEY=
 OPENROUTER_API_KEY=
 OLLAMA_URL=               # Default: http://localhost:11434
+
+# Site generation (set by Docker Compose, or override locally)
+GENERATION_DIR=           # Temp build I/O (default: /data/generation)
+OUTPUT_DIR=               # Static file output (default: /data/output)
 ```
 
 ## Testing
@@ -233,18 +233,17 @@ Current design spec: `docs/superpowers/specs/2026-03-30-project-revival-design.m
 
 ## Current Phase
 
-**Phase 2b (LLM Integration & Profile Synthesis) is complete.** Includes:
-- LiteLLM integration as unified LLM gateway (Anthropic, OpenAI, Gemini, OpenRouter, Ollama)
-- Dynamic model listing from provider APIs
-- Model selection and LiteLLM-based connection testing
-- Profile synthesis from document repository via LLM
-- SSE streaming with status updates and section-by-section delivery
-- Profile CRUD with field-level editing (PATCH deep merge)
-- Re-synthesis with free-form user guidance
+**Phase 3a (Sites & Generator Wiring) is complete.** Includes:
+- Username field on users for public URL namespace (`/{username}`, `/{username}/{slug}`)
+- Job posting ingestion: URL scraping, paste-and-parse (LLM), manual entry
+- Site generation pipeline: API → ARQ worker → Next.js subprocess → static HTML
+- Profile tailoring: LLM produces job-specific profile variants for targeted sites
+- Public Nginx service serving generated static sites
+- Stale detection for portfolio regeneration nudge
 
-**Phase 3** is next: Next.js generator wiring, theme design and implementation, resume PDF generation.
+**Phase 3b (Admin UI)** is next, followed by Phase 3c (Theme Design) and Phase 3d (Resume PDF Generation).
 
-See `docs/superpowers/specs/2026-03-31-phase2b-llm-profile-synthesis-design.md` for the full design.
+See `docs/superpowers/specs/2026-03-31-phase3a-sites-generator-wiring-design.md` for the full design.
 
 ## CRITICAL NOTES
 
