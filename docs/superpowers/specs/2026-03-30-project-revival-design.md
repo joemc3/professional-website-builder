@@ -6,9 +6,19 @@
 
 ## Problem Statement
 
-This project is a brownfield codebase that converts uploaded documents (resumes, portfolios) into gorgeous static portfolio websites using AI. It was originally a Tauri desktop app, then migrated to a Dockerized web application with a Rust API backend. The migration was never completed — Docker builds don't work, dependencies aren't locked, and the API has never successfully run in containers.
+This project is a brownfield codebase for building professional portfolio websites and targeted resumes from a repository of user documents. It was originally a Tauri desktop app, then migrated to a Dockerized web application with a Rust API backend. The migration was never completed — Docker builds don't work, dependencies aren't locked, and the API has never successfully run in containers.
 
 The owner is a 25+ year developer whose current stack is Python, JS, and Dart/Flutter. Rust is not in their wheelhouse, making the existing API unmaintainable without heavy AI assistance for every change.
+
+## Product Vision
+
+Users build a **document repository** over time — uploading resumes, project descriptions, accomplishment summaries, certifications, recommendation letters, and other professional documents. The AI synthesizes a unified professional profile from this corpus and produces three types of output:
+
+1. **Long-lived portfolio site** — a permanent professional presence generated from the full document repository. Optionally auto-updated as new documents are added. Includes a downloadable general resume.
+2. **Targeted site** — generated for a specific job posting, pulling the most relevant experience, skills, and accomplishments from the repository to match the role. Accessible at a shareable URL (subdomain or `site.com/<guid>`) so the user can include it in a job application.
+3. **Targeted resume PDF** — generated for a specific job posting, downloadable for email attachments. Tailored the same way as the targeted site.
+
+The document repository is the core asset. The sites and resumes are views into it, shaped by context (general vs. targeted to a specific role).
 
 ## Goals
 
@@ -18,6 +28,7 @@ The owner is a 25+ year developer whose current stack is Python, JS, and Dart/Fl
 4. **Adopt the superpowers workflow** — brainstorm → spec → plan → TDD → implementation for all future work
 5. **Make the themes genuinely gorgeous** — no AI slop, real design quality
 6. **Keep documentation accurate at all times** — README.md updated in every phase, same PR as code
+7. **Document repository as first-class concept** — users accumulate documents over time, not single-shot uploads
 
 ## Non-Goals
 
@@ -25,6 +36,7 @@ The owner is a 25+ year developer whose current stack is Python, JS, and Dart/Fl
 - Mobile app
 - Real-time collaboration
 - Payment processing
+- ATS optimization or job board integration
 
 ## Architecture
 
@@ -81,18 +93,25 @@ src-api/
 │   ├── models/               # SQLAlchemy ORM models
 │   │   ├── user.py
 │   │   ├── document.py
-│   │   ├── portfolio.py
+│   │   ├── profile.py
+│   │   ├── site.py
+│   │   ├── job_posting.py
+│   │   ├── resume.py
 │   │   └── api_key.py
 │   ├── routers/              # Endpoint groups (one file per resource)
 │   │   ├── auth.py
-│   │   ├── files.py
-│   │   ├── ai.py
-│   │   ├── generate.py
+│   │   ├── documents.py
+│   │   ├── profile.py
+│   │   ├── sites.py
+│   │   ├── resumes.py
+│   │   ├── job_postings.py
 │   │   └── settings.py
 │   ├── services/             # Business logic (testable without HTTP)
 │   │   ├── auth_service.py
 │   │   ├── document_parser.py
 │   │   ├── llm_client.py
+│   │   ├── profile_synthesizer.py   # Synthesize profile from document corpus
+│   │   ├── resume_generator.py      # Generate PDF resumes (general + targeted)
 │   │   ├── encryption.py
 │   │   └── site_generator.py
 │   ├── middleware/            # Auth middleware, rate limiting
@@ -114,28 +133,50 @@ src-api/
 
 **SQLAlchemy async + Alembic:** No compile-time SQL magic. Alembic handles migrations properly — versioned, reversible, and explicit.
 
-### REST API Endpoints (Unchanged Contract)
+### REST API Endpoints
 
 **Authentication** (Public):
 - `POST /api/auth/register` — User registration
 - `POST /api/auth/login` — Login (returns JWT)
 - `POST /api/auth/logout` — Logout
 
-**Files** (Protected):
-- `POST /api/files/ingest` — Upload and parse documents (multipart)
-- `GET /api/files/aggregated-text` — Retrieve parsed text
+**Document Repository** (Protected):
+- `POST /api/documents` — Upload and parse one or more documents (multipart)
+- `GET /api/documents` — List all documents in repository
+- `GET /api/documents/:id` — Get document details and parsed text
+- `DELETE /api/documents/:id` — Remove document from repository
 
-**AI Processing** (Protected):
-- `POST /api/ai/generate` — Generate portfolio JSON via LLM
+**Profile Synthesis** (Protected):
+- `POST /api/profile/synthesize` — (Re)generate unified profile from all documents via LLM
+- `GET /api/profile` — Get current synthesized profile
+- `PUT /api/profile` — Manually edit synthesized profile (user curation)
 
-**Website Generation** (Protected):
-- `POST /api/generate/website` — Build static site
+**Sites** (Protected):
+- `POST /api/sites/portfolio` — Generate long-lived portfolio site from profile
+- `POST /api/sites/targeted` — Generate targeted site for a job posting (accepts job posting data)
+- `GET /api/sites` — List all generated sites (portfolio + targeted)
+- `GET /api/sites/:slug` — Get site details
+- `DELETE /api/sites/:slug` — Remove a targeted site
+
+**Resumes** (Protected):
+- `POST /api/resumes/general` — Generate general resume PDF from profile
+- `POST /api/resumes/targeted` — Generate targeted resume PDF for a job posting
+- `GET /api/resumes` — List all generated resumes
+- `GET /api/resumes/:id/download` — Download resume PDF
+
+**Job Postings** (Protected):
+- `POST /api/job-postings` — Save a job posting for targeting
+- `GET /api/job-postings` — List saved job postings
+- `DELETE /api/job-postings/:id` — Remove a job posting
 
 **Settings** (Protected):
 - `POST /api/settings/api-keys` — Save encrypted API key
 - `GET /api/settings/api-keys/:provider` — Get API key
 - `DELETE /api/settings/api-keys/:provider` — Delete key
 - `POST /api/settings/test-connection` — Test LLM connection
+
+**Public Site Serving:**
+- `GET /s/:slug` — Serve a generated site (portfolio or targeted) — public, no auth
 
 **Utility:**
 - `GET /health` — Health check
@@ -318,7 +359,17 @@ src-generator/app/themes/[theme-name]/
 
 ### Resume PDF Generation
 
-New capability: each theme provides a resume template. Python generates a matching PDF server-side using WeasyPrint (HTML/CSS → PDF). The resume uses the same portfolio JSON data, styled to match the theme's visual identity.
+Each theme provides a resume template. Python generates a matching PDF server-side using WeasyPrint (HTML/CSS → PDF). Two flavors:
+
+- **General resume** — generated from the full synthesized profile, downloadable from the portfolio site
+- **Targeted resume** — generated for a specific job posting, pulling the most relevant content from the profile and tailoring emphasis/language to match the role
+
+### Site Types
+
+Each theme supports two modes:
+
+- **Portfolio mode** — long-lived site showing the full professional profile. Permanent URL. Optionally auto-regenerated when the profile is updated.
+- **Targeted mode** — focused site generated for a specific job posting. Shareable URL at `/s/<slug>`. Emphasizes experience and skills relevant to the role. Can optionally expire.
 
 ## Implementation Phases
 
@@ -340,29 +391,32 @@ Each phase gets its own implementation plan via the superpowers writing-plans wo
 - Update README.md and CLAUDE.md to reflect new Python architecture
 - Update .gitignore for Python patterns (__pycache__, .venv, etc.)
 
-### Phase 2: Core Pipeline (Make It Work)
+### Phase 2: Document Repository & AI Pipeline
 
-**Goal:** Full document upload → AI generation → validated portfolio JSON flow.
+**Goal:** Users can upload documents, build a repository, and synthesize a unified professional profile.
 
 - Document parsing for all 5 formats — TDD
-- File upload and retrieval endpoints — TDD
+- Document repository CRUD endpoints — TDD
 - LLM client for all 5 providers (Anthropic, OpenAI, Gemini, OpenRouter, Ollama) — TDD
-- AI generation endpoint — TDD
+- Profile synthesis from document corpus — TDD
+- Profile editing/curation endpoints — TDD
 - API key encryption/storage — TDD
-- Portfolio CRUD operations — TDD
 - Integration tests with testcontainers
 - Update README.md with current capabilities
 
-### Phase 3: Website Generation (The Payoff)
+### Phase 3: Sites & Resumes (The Payoff)
 
-**Goal:** Upload a document, get a gorgeous website and downloadable resume.
+**Goal:** Generate gorgeous portfolio sites, targeted sites for job postings, and downloadable resumes.
 
 - Wire Next.js generator to Python API
 - Brainstorm and design 3 new themes (separate design cycle with visual companion)
 - Implement themes
-- Resume PDF generation via WeasyPrint
+- Long-lived portfolio site generation from synthesized profile
+- Job posting ingestion and targeted site generation
+- Shareable site URLs (`/s/:slug`) — public serving without auth
+- Resume PDF generation via WeasyPrint (general + targeted)
 - E2E tests for full pipeline
-- Update README.md with theme documentation
+- Update README.md with theme and site documentation
 
 ### Phase 4: Production Ready
 
@@ -391,13 +445,36 @@ Optional:
 
 ## Database Schema
 
-Unchanged from existing design. All tables use UUID primary keys and automatic timestamps.
+Expanded from existing design to support the document repository and targeted outputs. All tables use UUID primary keys and automatic timestamps.
+
+### Core Tables
 
 - `users` — id, email, password_hash, created_at, updated_at
 - `sessions` — id, user_id, token, expires_at, created_at
 - `api_keys` — id, user_id, provider, encrypted_key, nonce, created_at
-- `documents` — id, user_id, filename, content_type, parsed_text, created_at
-- `portfolios` — id, user_id, data (JSONB), created_at, updated_at
+
+### Document Repository
+
+- `documents` — id, user_id, filename, content_type, parsed_text, uploaded_at, updated_at
+  - Documents are persistent — users accumulate them over time
+  - `parsed_text` stores the extracted content for AI synthesis
+
+### Synthesized Profile
+
+- `profiles` — id, user_id, data (JSONB), generated_at, updated_at
+  - The unified professional profile synthesized from all documents
+  - Regenerated when documents are added/removed (optionally automatic)
+  - This is what powers the long-lived portfolio site
+
+### Sites & Resumes
+
+- `sites` — id, user_id, profile_id, slug (unique), theme, type (enum: 'portfolio' | 'targeted'), job_posting_id (nullable), generated_at, expires_at (nullable)
+  - `slug` is the shareable URL path (e.g. `site.com/<slug>`)
+  - Portfolio sites have no expiration; targeted sites can optionally expire
+- `job_postings` — id, user_id, title, company, description, url (nullable), created_at
+  - Stores the job posting that a targeted site/resume was generated against
+- `resumes` — id, user_id, job_posting_id (nullable), format (enum: 'pdf'), data (JSONB), generated_at
+  - General resume (job_posting_id null) or targeted resume (linked to a posting)
 
 ## Open Questions
 
