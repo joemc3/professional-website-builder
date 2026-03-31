@@ -1,0 +1,92 @@
+<h2>Architecture: Professional Website Builder</h2>
+<p class="subtitle">Replacing the Rust API with Python (FastAPI), keeping React frontend and Next.js generator</p>
+
+<div class="section">
+  <h3>System Architecture</h3>
+  <div class="mockup">
+    <div class="mockup-header">Service Architecture — Docker Compose</div>
+    <div class="mockup-body" style="padding: 2rem; font-family: monospace; font-size: 0.85rem; line-height: 1.6;">
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+
+        <!-- Frontend -->
+        <div style="border: 2px solid #4a9eff; border-radius: 8px; padding: 1rem; text-align: center;">
+          <div style="background: #4a9eff; color: white; padding: 0.3rem 0.6rem; border-radius: 4px; display: inline-block; margin-bottom: 0.5rem; font-weight: bold;">Frontend</div>
+          <div style="color: #aaa; font-size: 0.8rem;">Nginx + React (Vite)</div>
+          <div style="margin-top: 0.5rem; color: #888; font-size: 0.75rem;">Serves SPA<br>Proxies /api → API</div>
+        </div>
+
+        <!-- API -->
+        <div style="border: 2px solid #50c878; border-radius: 8px; padding: 1rem; text-align: center;">
+          <div style="background: #50c878; color: white; padding: 0.3rem 0.6rem; border-radius: 4px; display: inline-block; margin-bottom: 0.5rem; font-weight: bold;">API</div>
+          <div style="color: #aaa; font-size: 0.8rem;">Python (FastAPI)</div>
+          <div style="margin-top: 0.5rem; color: #888; font-size: 0.75rem;">Auth, File Parsing<br>LLM Integration<br>Website Generation</div>
+        </div>
+
+        <!-- Generator -->
+        <div style="border: 2px solid #ff8c42; border-radius: 8px; padding: 1rem; text-align: center;">
+          <div style="background: #ff8c42; color: white; padding: 0.3rem 0.6rem; border-radius: 4px; display: inline-block; margin-bottom: 0.5rem; font-weight: bold;">Generator</div>
+          <div style="color: #aaa; font-size: 0.8rem;">Next.js 14</div>
+          <div style="margin-top: 0.5rem; color: #888; font-size: 0.75rem;">Theme Rendering<br>Static Site Export<br>Resume PDF</div>
+        </div>
+      </div>
+
+      <!-- Arrows -->
+      <div style="text-align: center; color: #666; margin-bottom: 1.5rem;">
+        <span style="color: #4a9eff;">Frontend</span>
+        &nbsp;→ HTTP →&nbsp;
+        <span style="color: #50c878;">API</span>
+        &nbsp;→ spawns →&nbsp;
+        <span style="color: #ff8c42;">Generator</span>
+      </div>
+
+      <!-- Database -->
+      <div style="display: flex; justify-content: center;">
+        <div style="border: 2px solid #c084fc; border-radius: 8px; padding: 1rem; text-align: center; width: 220px;">
+          <div style="background: #c084fc; color: white; padding: 0.3rem 0.6rem; border-radius: 4px; display: inline-block; margin-bottom: 0.5rem; font-weight: bold;">PostgreSQL</div>
+          <div style="color: #aaa; font-size: 0.8rem;">Users, Documents,<br>Portfolios, API Keys</div>
+        </div>
+      </div>
+      <div style="text-align: center; color: #666; margin-top: 0.5rem;">
+        ↑ <span style="color: #50c878;">API</span> connects via SQLAlchemy / asyncpg
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Key Changes from Existing Architecture</h3>
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+    <div style="border: 1px solid #333; border-radius: 8px; padding: 1rem;">
+      <div class="label" style="color: #ff6b6b;">Replacing (Rust)</div>
+      <ul style="color: #aaa; font-size: 0.85rem; margin: 0.5rem 0; padding-left: 1.2rem;">
+        <li>Axum HTTP server</li>
+        <li>SQLx (compile-time SQL)</li>
+        <li>comrak, pdf-extract, zip+quick-xml</li>
+        <li>reqwest HTTP client for LLMs</li>
+        <li>Complex multi-stage Dockerfile</li>
+      </ul>
+    </div>
+    <div style="border: 1px solid #333; border-radius: 8px; padding: 1rem;">
+      <div class="label" style="color: #50c878;">With (Python)</div>
+      <ul style="color: #aaa; font-size: 0.85rem; margin: 0.5rem 0; padding-left: 1.2rem;">
+        <li>FastAPI + Uvicorn</li>
+        <li>SQLAlchemy + Alembic migrations</li>
+        <li>python-docx, PyPDF2, openpyxl, python-pptx</li>
+        <li>httpx async client for LLMs</li>
+        <li>Simple single-stage Dockerfile</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>What Stays The Same</h3>
+  <ul style="color: #ccc; font-size: 0.9rem;">
+    <li><strong>React frontend</strong> — same SPA, same API contract, just points at Python instead of Rust</li>
+    <li><strong>Next.js generator</strong> — themes untouched, still builds static sites</li>
+    <li><strong>PostgreSQL schema</strong> — same tables (users, documents, portfolios, api_keys, sessions)</li>
+    <li><strong>REST API contract</strong> — same endpoints, same request/response shapes</li>
+    <li><strong>Docker Compose orchestration</strong> — same 4-service architecture</li>
+    <li><strong>Portfolio JSON schema</strong> — the data structure spec is unchanged</li>
+  </ul>
+</div>

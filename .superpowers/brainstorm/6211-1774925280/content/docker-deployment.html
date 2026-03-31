@@ -1,0 +1,108 @@
+<h2>Docker & Deployment Design</h2>
+<p class="subtitle">Two compose profiles: local dev and production (VPS behind Pangolin/Traefik)</p>
+
+<div class="section">
+  <h3>Development Environment</h3>
+  <div class="mockup">
+    <div class="mockup-header">docker compose --profile dev up</div>
+    <div class="mockup-body" style="padding: 1.5rem; font-family: monospace; font-size: 0.82rem; line-height: 1.5;">
+
+      <div style="border: 2px dashed #555; border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
+        <div style="color: #888; font-size: 0.75rem; margin-bottom: 0.8rem;">YOUR MAC — localhost</div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 0.8rem;">
+          <div style="border: 1px solid #4a9eff; border-radius: 6px; padding: 0.6rem; text-align: center;">
+            <div style="color: #4a9eff; font-weight: bold; font-size: 0.8rem;">Frontend</div>
+            <div style="color: #aaa; font-size: 0.7rem;">Vite dev server</div>
+            <div style="color: #50c878; font-size: 0.75rem; margin-top: 0.3rem;">:5173</div>
+          </div>
+          <div style="border: 1px solid #50c878; border-radius: 6px; padding: 0.6rem; text-align: center;">
+            <div style="color: #50c878; font-weight: bold; font-size: 0.8rem;">API</div>
+            <div style="color: #aaa; font-size: 0.7rem;">Uvicorn reload</div>
+            <div style="color: #50c878; font-size: 0.75rem; margin-top: 0.3rem;">:8000</div>
+          </div>
+          <div style="border: 1px solid #c084fc; border-radius: 6px; padding: 0.6rem; text-align: center;">
+            <div style="color: #c084fc; font-weight: bold; font-size: 0.8rem;">PostgreSQL</div>
+            <div style="color: #aaa; font-size: 0.7rem;">Dev database</div>
+            <div style="color: #50c878; font-size: 0.75rem; margin-top: 0.3rem;">:5432</div>
+          </div>
+          <div style="border: 1px solid #ff8c42; border-radius: 6px; padding: 0.6rem; text-align: center;">
+            <div style="color: #ff8c42; font-weight: bold; font-size: 0.8rem;">Generator</div>
+            <div style="color: #aaa; font-size: 0.7rem;">Next.js dev</div>
+            <div style="color: #50c878; font-size: 0.75rem; margin-top: 0.3rem;">:3000</div>
+          </div>
+        </div>
+        <div style="color: #666; font-size: 0.72rem; margin-top: 0.8rem; text-align: center;">
+          All ports exposed to host • Hot reload on API + Frontend • Volume mounts for live code
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Production Environment (VPS)</h3>
+  <div class="mockup">
+    <div class="mockup-header">docker compose --profile prod up -d</div>
+    <div class="mockup-body" style="padding: 1.5rem; font-family: monospace; font-size: 0.82rem; line-height: 1.5;">
+
+      <!-- External -->
+      <div style="text-align: center; margin-bottom: 0.8rem;">
+        <span style="color: #ccc;">🌐 Internet</span>
+        <span style="color: #555;"> → </span>
+        <span style="background: #2d2d2d; border: 1px solid #666; padding: 0.3rem 0.8rem; border-radius: 4px; color: #ffd700;">Pangolin → Traefik</span>
+      </div>
+      <div style="text-align: center; color: #555; margin-bottom: 0.8rem;">↓ Docker network (no exposed ports)</div>
+
+      <div style="border: 2px dashed #555; border-radius: 8px; padding: 1rem;">
+        <div style="color: #888; font-size: 0.75rem; margin-bottom: 0.8rem;">DOCKER NETWORK — internal only</div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 0.8rem;">
+          <div style="border: 1px solid #4a9eff; border-radius: 6px; padding: 0.6rem; text-align: center;">
+            <div style="color: #4a9eff; font-weight: bold; font-size: 0.8rem;">Frontend</div>
+            <div style="color: #aaa; font-size: 0.7rem;">Nginx + SPA</div>
+            <div style="color: #ff6b6b; font-size: 0.7rem; margin-top: 0.3rem;">no host port</div>
+          </div>
+          <div style="border: 1px solid #50c878; border-radius: 6px; padding: 0.6rem; text-align: center;">
+            <div style="color: #50c878; font-weight: bold; font-size: 0.8rem;">API</div>
+            <div style="color: #aaa; font-size: 0.7rem;">Uvicorn prod</div>
+            <div style="color: #ff6b6b; font-size: 0.7rem; margin-top: 0.3rem;">no host port</div>
+          </div>
+          <div style="border: 1px solid #c084fc; border-radius: 6px; padding: 0.6rem; text-align: center;">
+            <div style="color: #c084fc; font-weight: bold; font-size: 0.8rem;">PostgreSQL</div>
+            <div style="color: #aaa; font-size: 0.7rem;">Persistent vol</div>
+            <div style="color: #ff6b6b; font-size: 0.7rem; margin-top: 0.3rem;">no host port</div>
+          </div>
+          <div style="border: 1px solid #ff8c42; border-radius: 6px; padding: 0.6rem; text-align: center;">
+            <div style="color: #ff8c42; font-weight: bold; font-size: 0.8rem;">Generator</div>
+            <div style="color: #aaa; font-size: 0.7rem;">Next.js build</div>
+            <div style="color: #ff6b6b; font-size: 0.7rem; margin-top: 0.3rem;">no host port</div>
+          </div>
+        </div>
+        <div style="color: #666; font-size: 0.72rem; margin-top: 0.8rem; text-align: center;">
+          Zero exposed ports • Traefik labels for routing • Health checks on all services
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Key Docker Decisions</h3>
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+    <div style="border: 1px solid #333; border-radius: 8px; padding: 1rem;">
+      <div class="label" style="color: #50c878;">Compose Profiles</div>
+      <p style="color: #aaa; font-size: 0.85rem; margin: 0.5rem 0;">Single <code>docker-compose.yml</code> with <code>dev</code> and <code>prod</code> profiles instead of separate files. Cleaner, less drift.</p>
+    </div>
+    <div style="border: 1px solid #333; border-radius: 8px; padding: 1rem;">
+      <div class="label" style="color: #50c878;">Health Checks</div>
+      <p style="color: #aaa; font-size: 0.85rem; margin: 0.5rem 0;">Every service gets a <code>/health</code> endpoint. Required for Traefik routing and for <code>depends_on</code> with <code>condition: service_healthy</code>.</p>
+    </div>
+    <div style="border: 1px solid #333; border-radius: 8px; padding: 1rem;">
+      <div class="label" style="color: #50c878;">External Network</div>
+      <p style="color: #aaa; font-size: 0.85rem; margin: 0.5rem 0;">Production joins an external Docker network (e.g. <code>pangolin_net</code>) so Traefik can reach it. No port publishing needed.</p>
+    </div>
+    <div style="border: 1px solid #333; border-radius: 8px; padding: 1rem;">
+      <div class="label" style="color: #50c878;">Python Dockerfile</div>
+      <p style="color: #aaa; font-size: 0.85rem; margin: 0.5rem 0;">Simple: <code>python:3.12-slim</code>, install <code>uv</code>, copy lockfile, install deps, copy app. No multi-stage Rust compilation nightmare.</p>
+    </div>
+  </div>
+</div>
