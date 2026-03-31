@@ -25,12 +25,29 @@ async def lifespan(app: FastAPI):
         logger.error(f"Migration failed: {result.stderr}")
     else:
         logger.info("Database migrations applied successfully")
+
+    # Create ARQ Redis pool
+    app.state.arq_pool = None
+    try:
+        from arq import create_pool
+
+        from app.worker import get_redis_settings
+
+        app.state.arq_pool = await create_pool(get_redis_settings())
+        logger.info("ARQ pool connected to Redis")
+    except Exception as e:
+        logger.warning(f"Redis not available — background jobs disabled: {e}")
+
     yield
+
+    # Cleanup
+    if app.state.arq_pool is not None:
+        await app.state.arq_pool.close()
 
 
 app = FastAPI(
     title="Professional Website Builder API",
-    version="0.1.0",
+    version="0.2.0",
     lifespan=lifespan,
 )
 
