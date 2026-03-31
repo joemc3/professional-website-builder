@@ -133,3 +133,98 @@ class TestComplete:
             mock_litellm.acompletion = AsyncMock(side_effect=Exception("API rate limit exceeded"))
             with pytest.raises(LLMError, match="API rate limit exceeded"):
                 await complete("anthropic/claude-sonnet-4-20250514", messages, user_id, mock_db)
+
+    @pytest.mark.asyncio
+    async def test_none_content_raises_llm_error(self):
+        mock_db = AsyncMock()
+        user_id = uuid.uuid4()
+        messages = [{"role": "user", "content": "hello"}]
+
+        mock_response = MagicMock()
+        mock_response.choices = [MagicMock()]
+        mock_response.choices[0].message.content = None
+
+        with (
+            patch("app.services.llm_service.get_api_key_for_provider", new_callable=AsyncMock, return_value="sk-key"),
+            patch("app.services.llm_service.litellm") as mock_litellm,
+        ):
+            mock_litellm.acompletion = AsyncMock(return_value=mock_response)
+            with pytest.raises(LLMError, match="Model returned empty content"):
+                await complete("anthropic/claude-sonnet-4-20250514", messages, user_id, mock_db)
+
+
+class TestStream:
+    @pytest.mark.asyncio
+    async def test_yields_chunks(self):
+        mock_db = AsyncMock()
+        user_id = uuid.uuid4()
+        messages = [{"role": "user", "content": "hello"}]
+
+        chunk1 = MagicMock()
+        chunk1.choices = [MagicMock()]
+        chunk1.choices[0].delta.content = "hel"
+
+        chunk2 = MagicMock()
+        chunk2.choices = [MagicMock()]
+        chunk2.choices[0].delta.content = "lo"
+
+        chunk3 = MagicMock()
+        chunk3.choices = [MagicMock()]
+        chunk3.choices[0].delta.content = None
+
+        async def mock_stream():
+            for chunk in [chunk1, chunk2, chunk3]:
+                yield chunk
+
+        with (
+            patch("app.services.llm_service.get_api_key_for_provider", new_callable=AsyncMock, return_value="sk-key"),
+            patch("app.services.llm_service.litellm") as mock_litellm,
+        ):
+            mock_litellm.acompletion = AsyncMock(return_value=mock_stream())
+            chunks = []
+            async for chunk in stream("anthropic/claude-sonnet-4-20250514", messages, user_id, mock_db):
+                chunks.append(chunk)
+
+        assert chunks == ["hel", "lo"]
+
+    @pytest.mark.asyncio
+    async def test_ollama_passes_api_base(self):
+        mock_db = AsyncMock()
+        user_id = uuid.uuid4()
+        messages = [{"role": "user", "content": "hello"}]
+
+        async def mock_stream():
+            chunk = MagicMock()
+            chunk.choices = [MagicMock()]
+            chunk.choices[0].delta.content = "ok"
+            yield chunk
+
+        with (
+            patch("app.services.llm_service.get_api_key_for_provider", new_callable=AsyncMock, return_value=None),
+            patch("app.services.llm_service.litellm") as mock_litellm,
+            patch("app.services.llm_service.settings") as mock_settings,
+        ):
+            mock_settings.ollama_url = "http://ollama.lan:11434"
+            mock_litellm.acompletion = AsyncMock(return_value=mock_stream())
+            chunks = []
+            async for chunk in stream("ollama/llama3", messages, user_id, mock_db):
+                chunks.append(chunk)
+
+        assert chunks == ["ok"]
+        call_kwargs = mock_litellm.acompletion.call_args.kwargs
+        assert call_kwargs["api_base"] == "http://ollama.lan:11434"
+
+    @pytest.mark.asyncio
+    async def test_error_maps_to_llm_error(self):
+        mock_db = AsyncMock()
+        user_id = uuid.uuid4()
+        messages = [{"role": "user", "content": "hello"}]
+
+        with (
+            patch("app.services.llm_service.get_api_key_for_provider", new_callable=AsyncMock, return_value="sk-key"),
+            patch("app.services.llm_service.litellm") as mock_litellm,
+        ):
+            mock_litellm.acompletion = AsyncMock(side_effect=Exception("Connection failed"))
+            with pytest.raises(LLMError, match="Connection failed"):
+                async for _ in stream("anthropic/claude-sonnet-4-20250514", messages, user_id, mock_db):
+                    pass

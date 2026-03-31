@@ -65,7 +65,10 @@ async def complete(
 
     try:
         response = await litellm.acompletion(**kwargs)
-        return response.choices[0].message.content
+        content = response.choices[0].message.content
+        if content is None:
+            raise LLMError("Model returned empty content")
+        return content
     except Exception as e:
         raise LLMError(str(e)) from e
 
