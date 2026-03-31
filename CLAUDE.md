@@ -76,6 +76,7 @@ Public Sites (Nginx)  ←── serves ────┘
 - **Database**: PostgreSQL 16 with `asyncpg`
 - **Frontend**: React 18 + TypeScript + Vite + Tailwind CSS
 - **Generator**: Next.js 14
+- **LLM Gateway**: LiteLLM (unified interface for Anthropic, OpenAI, Gemini, OpenRouter, Ollama)
 - **Containers**: Docker Compose with profiles (`dev`)
 
 ## Common Commands
@@ -120,6 +121,12 @@ npm run lint                              # Lint
 - `GET /api/settings/api-keys/:provider` — Check if API key is set
 - `DELETE /api/settings/api-keys/:provider` — Delete API key
 - `POST /api/settings/test-connection` — Test LLM provider connectivity
+- `GET /api/settings/models/:provider` — List available models from provider
+- `PUT /api/settings/api-keys/:provider/model` — Set selected model for provider
+- `POST /api/profile/synthesize` — Synthesize profile via LLM (SSE stream)
+- `GET /api/profile` — Get current synthesized profile
+- `PUT /api/profile` — Replace profile data
+- `PATCH /api/profile` — Partial profile update (deep merge)
 
 ### Planned (Phase 2b+)
 
@@ -150,7 +157,7 @@ npm run lint                              # Lint
 
 - Schema managed by Alembic migrations in `src-api/migrations/versions/`
 - Migrations run automatically on API startup (via `alembic upgrade head` in the lifespan hook)
-- **Current tables**: `users`, `documents`, `api_keys`
+- **Current tables**: `users`, `documents`, `api_keys`, `profiles`
 - **Planned tables**: `profiles`, `sites`, `job_postings`, `resumes`
 
 All tables use UUID primary keys and automatic timestamps.
@@ -226,16 +233,18 @@ Current design spec: `docs/superpowers/specs/2026-03-30-project-revival-design.m
 
 ## Current Phase
 
-**Phase 2a (Document Pipeline) is complete.** Includes:
-- Document upload and storage (local filesystem)
-- Document parsing (5 formats: .md, .docx, .pdf, .xlsx, .pptx)
-- Background job processing via ARQ + Redis
-- API key encryption (AES-256-GCM) and management
-- Docker Compose with Redis and Worker services
+**Phase 2b (LLM Integration & Profile Synthesis) is complete.** Includes:
+- LiteLLM integration as unified LLM gateway (Anthropic, OpenAI, Gemini, OpenRouter, Ollama)
+- Dynamic model listing from provider APIs
+- Model selection and LiteLLM-based connection testing
+- Profile synthesis from document repository via LLM
+- SSE streaming with status updates and section-by-section delivery
+- Profile CRUD with field-level editing (PATCH deep merge)
+- Re-synthesis with free-form user guidance
 
-**Phase 2b** is next: LiteLLM integration, profile synthesis via SSE, profile editing.
+**Phase 3** is next: Next.js generator wiring, theme design and implementation, resume PDF generation.
 
-See `docs/superpowers/specs/2026-03-30-project-revival-design.md` for the full phase plan.
+See `docs/superpowers/specs/2026-03-31-phase2b-llm-profile-synthesis-design.md` for the full design.
 
 ## CRITICAL NOTES
 
