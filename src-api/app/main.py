@@ -8,7 +8,7 @@ from sqlalchemy import text
 
 from app.config import settings
 from app.database import async_session_factory
-from app.routers import auth, documents, profile, settings as settings_router
+from app.routers import auth, documents, job_postings, profile, settings as settings_router
 
 logger = logging.getLogger(__name__)
 
@@ -67,6 +67,7 @@ app.include_router(auth.router)
 app.include_router(documents.router)
 app.include_router(profile.router)
 app.include_router(settings_router.router)
+app.include_router(job_postings.router)
 
 
 @app.get("/health")
