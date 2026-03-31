@@ -154,12 +154,17 @@ Python libraries for each supported format:
 
 ### LLM Integration
 
-Same 4 providers, same prompt strategy (request JSON matching the Data Structure Specification):
+5 providers, same prompt strategy (request JSON matching the Data Structure Specification):
 
 - **Anthropic Claude** — via `anthropic` Python SDK
 - **OpenAI GPT** — via `openai` Python SDK
 - **Google Gemini** — via `google-generativeai` SDK
-- **Local (Ollama/LM Studio)** — via `httpx` to local endpoint
+- **OpenRouter** — via `httpx` to OpenRouter API (OpenAI-compatible endpoint, supports hundreds of models)
+- **Ollama (local or remote)** — via `httpx` to configurable endpoint (supports both `http://localhost:11434` and remote network addresses like `http://ollama.lan:11434`)
+
+OpenRouter uses an OpenAI-compatible API, so the implementation can share the same request/response handling as the OpenAI provider with a different base URL and API key. The user selects a specific model from OpenRouter's catalog via the UI.
+
+Ollama is configured via `OLLAMA_URL` which defaults to `http://localhost:11434` but can point to any network-accessible Ollama instance. LM Studio uses the same OpenAI-compatible protocol and can be reached the same way.
 
 60-second timeout. One retry on malformed responses. Clear error messages for API failures, rate limits, and invalid keys.
 
@@ -341,7 +346,7 @@ Each phase gets its own implementation plan via the superpowers writing-plans wo
 
 - Document parsing for all 5 formats — TDD
 - File upload and retrieval endpoints — TDD
-- LLM client for all 4 providers — TDD
+- LLM client for all 5 providers (Anthropic, OpenAI, Gemini, OpenRouter, Ollama) — TDD
 - AI generation endpoint — TDD
 - API key encryption/storage — TDD
 - Portfolio CRUD operations — TDD
@@ -379,7 +384,8 @@ Optional:
 - `ANTHROPIC_API_KEY` — For Claude AI
 - `OPENAI_API_KEY` — For GPT AI
 - `GEMINI_API_KEY` — For Gemini AI
-- `OLLAMA_URL` — For local LLM
+- `OPENROUTER_API_KEY` — For OpenRouter (access to hundreds of models)
+- `OLLAMA_URL` — For Ollama (default: `http://localhost:11434`, set to remote address for network Ollama instances)
 - `CORS_ORIGINS` — Allowed origins (comma-separated)
 - `LOG_LEVEL` — Logging level (debug/info/warning/error)
 
