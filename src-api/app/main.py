@@ -8,7 +8,7 @@ from sqlalchemy import text
 
 from app.config import settings
 from app.database import async_session_factory
-from app.routers import auth
+from app.routers import auth, documents
 
 logger = logging.getLogger(__name__)
 
@@ -64,6 +64,7 @@ app.add_middleware(
 )
 
 app.include_router(auth.router)
+app.include_router(documents.router)
 
 
 @app.get("/health")
