@@ -1,0 +1,32 @@
+.coral-theme {
+  --coral-primary: #d4553a;
+  --coral-primary-light: #e0735e;
+  --coral-amber: #f4a261;
+  --coral-amber-light: #f7be8a;
+  --coral-bg: #fffaf7;
+  --coral-surface: #fff5f0;
+  --coral-surface-alt: #fef0e8;
+  --coral-text: #2d2420;
+  --coral-text-muted: #6b5b52;
+  --coral-border: #e8d5c8;
+}
+
+.coral-theme .section-container {
+  @apply max-w-6xl mx-auto px-6 py-16 md:py-24;
+}
+
+.coral-theme .section-title {
+  @apply text-3xl md:text-4xl font-heading font-bold mb-8 text-[var(--coral-text)];
+}
+
+.coral-theme .card {
+  @apply bg-white rounded-2xl p-6 border border-[var(--coral-border)] shadow-sm hover:shadow-md transition-shadow;
+}
+
+.coral-theme .accent-bar {
+  @apply h-1 w-16 rounded-full bg-gradient-to-r from-[var(--coral-primary)] to-[var(--coral-amber)];
+}
+
+.coral-theme .tag {
+  @apply text-sm bg-[var(--coral-surface-alt)] text-[var(--coral-primary)] px-3 py-1 rounded-full font-medium;
+}
