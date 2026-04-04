@@ -1,0 +1,26 @@
+.quartz-theme {
+  --quartz-primary: #3355cc;
+  --quartz-primary-light: #5577ee;
+  --quartz-bg: #ffffff;
+  --quartz-surface: #f8f9fb;
+  --quartz-text: #1a1a2e;
+  --quartz-text-muted: #6b7280;
+  --quartz-border: #e5e7eb;
+  --quartz-navy: #1e2a4a;
+}
+
+.quartz-theme .section-container {
+  @apply max-w-6xl mx-auto px-6 py-14 md:py-20;
+}
+
+.quartz-theme .section-title {
+  @apply text-2xl font-heading font-bold mb-8 text-[var(--quartz-navy)] uppercase tracking-wide text-sm;
+}
+
+.quartz-theme .card {
+  @apply bg-[var(--quartz-bg)] rounded-lg p-6 border border-[var(--quartz-border)] hover:border-[var(--quartz-primary-light)] transition-colors;
+}
+
+.quartz-theme .metric {
+  @apply text-sm font-bold text-[var(--quartz-primary)] bg-[var(--quartz-surface)] px-3 py-1 rounded-full border border-[var(--quartz-border)];
+}
