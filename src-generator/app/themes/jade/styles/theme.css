@@ -1,0 +1,26 @@
+.jade-theme {
+  --jade-primary: #3d6b4f;
+  --jade-primary-light: #4e8a64;
+  --jade-secondary: #8fb380;
+  --jade-bg: #f4f7f2;
+  --jade-surface: #ffffff;
+  --jade-text: #2a3a2e;
+  --jade-text-muted: #5a6e5f;
+  --jade-border: #d4e0d7;
+}
+
+.jade-theme .section-container {
+  @apply max-w-5xl mx-auto px-6 py-16 md:py-20;
+}
+
+.jade-theme .section-title {
+  @apply text-2xl md:text-3xl font-heading font-bold mb-8 text-[var(--jade-primary)] border-b-2 border-[var(--jade-secondary)] pb-3 inline-block;
+}
+
+.jade-theme .card {
+  @apply bg-[var(--jade-surface)] rounded-lg p-6 border border-[var(--jade-border)] shadow-sm;
+}
+
+.jade-theme .tag {
+  @apply text-sm bg-[var(--jade-bg)] text-[var(--jade-primary)] px-3 py-1 rounded border border-[var(--jade-border)];
+}
