@@ -140,21 +140,18 @@ npm run lint                              # Lint
 - `GET /api/sites` — List all sites with stale detection (JWT required)
 - `GET /api/sites/:id` — Get site details (JWT required)
 - `DELETE /api/sites/:id` — Delete targeted site and output files (JWT required)
-
-### Planned (Phase 3b+)
-
-**Resumes** (protected):
-- `POST /api/resumes/general` — Generate general resume PDF
-- `POST /api/resumes/targeted` — Generate targeted resume PDF for a job posting
-- `GET /api/resumes` — List all generated resumes
-- `GET /api/resumes/:id/download` — Download resume PDF
+- `POST /api/resumes/general` — Generate general resume PDF (JWT required)
+- `POST /api/resumes/targeted` — Generate targeted resume PDF for a job posting (JWT required)
+- `GET /api/resumes` — List all resumes with stale indicators (JWT required)
+- `GET /api/resumes/:id` — Get resume details (JWT required)
+- `GET /api/resumes/:id/download` — Download resume PDF (JWT required)
+- `DELETE /api/resumes/:id` — Delete resume and PDF file (JWT required)
 
 ## Database
 
 - Schema managed by Alembic migrations in `src-api/migrations/versions/`
 - Migrations run automatically on API startup (via `alembic upgrade head` in the lifespan hook)
-- **Current tables**: `users`, `documents`, `api_keys`, `profiles`, `job_postings`, `sites`
-- **Planned tables**: `resumes`
+- **Current tables**: `users`, `documents`, `api_keys`, `profiles`, `job_postings`, `sites`, `resumes`
 
 All tables use UUID primary keys and automatic timestamps.
 
@@ -233,22 +230,15 @@ Current design spec: `docs/superpowers/specs/2026-03-30-project-revival-design.m
 
 ## Current Phase
 
-**Phase 3b (Admin UI) is complete.** Full rebuild of the React admin app with shadcn/ui, TanStack Query, and persistent sidebar layout. Includes:
-- Login/register auth pages
-- Document upload with drag-and-drop, list, expand, delete
-- Profile view with inline editing and SSE-powered AI synthesis
-- Job posting management: tabbed create (URL scrape, text parse, manual), edit, list, delete
-- Site generation: portfolio and targeted, theme selection, async status polling, stale detection
-- Settings: username setup, per-provider API key management, model selection, connection testing
-- Dark mode with system-preference default and manual toggle
+**Phase 3d (Resume PDF Generation) is complete.** Resume PDF generation pipeline with LLM-powered content tailoring, WeasyPrint rendering, theme-matched templates (Onyx, Coral, Serene, Jade, Quartz, Plain), user-configurable page targets, and two-pass page fitting. Admin UI includes dedicated resume management page with generation dialogs, polling, download, and stale detection.
 
 **Previous phases:**
+- Phase 3c (Theme Design) — 5 site themes with content primitives composition architecture
+- Phase 3b (Admin UI) — full React admin app rebuild with shadcn/ui
 - Phase 3a (Sites & Generator Wiring) — backend pipeline, job postings, site generation, public Nginx
 - Phase 2b (Profile & Settings) — profile synthesis, API key management, document parsing
 
-**Phase 3c (Theme Design)** is next, followed by Phase 3d (Resume PDF Generation).
-
-See `docs/superpowers/specs/2026-03-31-phase3b-admin-ui-design.md` for the full design.
+**Phase 3e (Polish & Deployment)** is next.
 
 ## CRITICAL NOTES
 

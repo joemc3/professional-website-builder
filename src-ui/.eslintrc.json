@@ -14,5 +14,17 @@
       { "allowConstantExport": true }
     ],
     "@typescript-eslint/no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }]
-  }
+  },
+  "overrides": [
+    {
+      "files": [
+        "src/components/ui/**/*.tsx",
+        "src/contexts/**/*.tsx",
+        "src/providers/**/*.tsx"
+      ],
+      "rules": {
+        "react-refresh/only-export-components": "off"
+      }
+    }
+  ]
 }
