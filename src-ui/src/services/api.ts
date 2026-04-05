@@ -27,6 +27,11 @@ import type {
   TestConnectionRequest,
   TestConnectionResponse,
 } from '@/types/api';
+import type {
+  GeneralResumeRequest,
+  TargetedResumeRequest,
+  ResumeResponse,
+} from '@/types/resume';
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || '',
@@ -285,4 +290,47 @@ export async function testConnection(
     data
   );
   return res.data;
+}
+
+// Resumes
+export async function getResumes(): Promise<ResumeResponse[]> {
+  const res = await api.get<ResumeResponse[]>('/api/resumes');
+  return res.data;
+}
+
+export async function getResume(id: string): Promise<ResumeResponse> {
+  const res = await api.get<ResumeResponse>(`/api/resumes/${id}`);
+  return res.data;
+}
+
+export async function generateGeneralResume(
+  data: GeneralResumeRequest
+): Promise<ResumeResponse> {
+  const res = await api.post<ResumeResponse>('/api/resumes/general', data);
+  return res.data;
+}
+
+export async function generateTargetedResume(
+  data: TargetedResumeRequest
+): Promise<ResumeResponse> {
+  const res = await api.post<ResumeResponse>('/api/resumes/targeted', data);
+  return res.data;
+}
+
+export async function deleteResume(id: string): Promise<void> {
+  await api.delete(`/api/resumes/${id}`);
+}
+
+export async function downloadResume(id: string): Promise<void> {
+  const res = await api.get(`/api/resumes/${id}/download`, {
+    responseType: 'blob',
+  });
+  const url = window.URL.createObjectURL(new Blob([res.data]));
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `resume-${id}.pdf`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(url);
 }
