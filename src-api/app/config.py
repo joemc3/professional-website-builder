@@ -37,6 +37,9 @@ class Settings(BaseSettings):
     generation_dir: str = "/data/generation"
     output_dir: str = "/data/output"
     generator_script: str = "/app/generator/generate.js"
+    generator_dir: str = "/app/generator"
+    preview_port: int = 3002
+    preview_timeout_seconds: int = 300  # 5 minutes of inactivity
 
     model_config = {"env_prefix": "", "case_sensitive": False}
 
