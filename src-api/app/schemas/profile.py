@@ -102,6 +102,7 @@ class ProfileResponse(BaseModel):
     id: str
     data: ProfileData
     guidance: str | None
+    photo_path: str | None = None
     generated_at: str | None
     created_at: str
     updated_at: str

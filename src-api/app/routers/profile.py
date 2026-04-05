@@ -1,14 +1,18 @@
 import json
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.responses import StreamingResponse
+from pathlib import Path
+
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi.responses import FileResponse, StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import settings
 from app.database import get_db
 from app.middleware.auth import get_current_user
 from app.schemas.profile import ProfileData, ProfileResponse, SynthesizeRequest
 from app.services import profile_service
+from app.services.photo_service import delete_photo, resize_photo, save_photo, validate_photo
 from app.services.profile_synthesizer import synthesize_profile
 from app.services.resume_service import mark_resumes_stale
 
@@ -28,6 +32,7 @@ async def get_profile(
         id=str(profile.id),
         data=ProfileData(**profile.data),
         guidance=profile.guidance,
+        photo_path=profile.photo_path,
         generated_at=profile.generated_at.isoformat() if profile.generated_at else None,
         created_at=profile.created_at.isoformat(),
         updated_at=profile.updated_at.isoformat(),
@@ -47,6 +52,7 @@ async def update_profile_endpoint(
         id=str(profile.id),
         data=ProfileData(**profile.data),
         guidance=profile.guidance,
+        photo_path=profile.photo_path,
         generated_at=profile.generated_at.isoformat() if profile.generated_at else None,
         created_at=profile.created_at.isoformat(),
         updated_at=profile.updated_at.isoformat(),
@@ -69,6 +75,7 @@ async def patch_profile_endpoint(
         id=str(profile.id),
         data=ProfileData(**profile.data),
         guidance=profile.guidance,
+        photo_path=profile.photo_path,
         generated_at=profile.generated_at.isoformat() if profile.generated_at else None,
         created_at=profile.created_at.isoformat(),
         updated_at=profile.updated_at.isoformat(),
@@ -123,3 +130,82 @@ async def synthesize_profile_endpoint(
 
 def _sse_event(event_type: str, data: dict) -> str:
     return f"event: {event_type}\ndata: {json.dumps(data)}\n\n"
+
+
+@router.post("/photo", response_model=ProfileResponse)
+async def upload_photo(
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    user_id = uuid.UUID(current_user["id"])
+    profile = await profile_service.get_profile(db, user_id)
+    if profile is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No profile exists")
+
+    try:
+        validate_photo(file.content_type or "", file.size or 0)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+    data = await file.read()
+    resized = resize_photo(data, file.content_type or "image/jpeg")
+    rel_path = save_photo(user_id, resized, file.content_type or "image/jpeg")
+
+    profile.photo_path = rel_path
+    await db.commit()
+    await db.refresh(profile)
+
+    return ProfileResponse(
+        id=str(profile.id),
+        data=ProfileData(**profile.data),
+        guidance=profile.guidance,
+        photo_path=profile.photo_path,
+        generated_at=profile.generated_at.isoformat() if profile.generated_at else None,
+        created_at=profile.created_at.isoformat(),
+        updated_at=profile.updated_at.isoformat(),
+    )
+
+
+@router.delete("/photo", response_model=ProfileResponse)
+async def remove_photo(
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    user_id = uuid.UUID(current_user["id"])
+    profile = await profile_service.get_profile(db, user_id)
+    if profile is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No profile exists")
+
+    if profile.photo_path:
+        delete_photo(profile.photo_path)
+        profile.photo_path = None
+        await db.commit()
+        await db.refresh(profile)
+
+    return ProfileResponse(
+        id=str(profile.id),
+        data=ProfileData(**profile.data),
+        guidance=profile.guidance,
+        photo_path=profile.photo_path,
+        generated_at=profile.generated_at.isoformat() if profile.generated_at else None,
+        created_at=profile.created_at.isoformat(),
+        updated_at=profile.updated_at.isoformat(),
+    )
+
+
+@router.get("/photo/file")
+async def get_photo_file(
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    user_id = uuid.UUID(current_user["id"])
+    profile = await profile_service.get_profile(db, user_id)
+    if profile is None or not profile.photo_path:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No photo")
+
+    full_path = Path(settings.upload_dir) / profile.photo_path
+    if not full_path.exists():
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Photo file missing")
+
+    return FileResponse(str(full_path))
