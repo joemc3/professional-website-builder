@@ -19,6 +19,29 @@ export function loadPortfolioData(): PortfolioData {
 }
 
 /**
+ * Load preview data for a specific preview ID.
+ * Preview data is written by the API to {generation_dir}/preview/{id}/portfolio-data.json.
+ */
+export function loadPreviewData(previewId: string): PortfolioData {
+  const possiblePaths = [
+    path.join(process.cwd(), '.data', 'preview', previewId, 'portfolio-data.json'),
+    path.join('/data/generation', 'preview', previewId, 'portfolio-data.json'),
+  ];
+
+  for (const dataPath of possiblePaths) {
+    try {
+      const fileContents = fs.readFileSync(dataPath, 'utf-8');
+      return JSON.parse(fileContents) as PortfolioData;
+    } catch {
+      continue;
+    }
+  }
+
+  console.error(`Preview data not found for ID: ${previewId}`);
+  return getDefaultPortfolioData();
+}
+
+/**
  * Returns default/sample portfolio data for development and testing.
  */
 export function getDefaultPortfolioData(): PortfolioData {
