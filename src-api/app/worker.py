@@ -14,11 +14,21 @@ from app.models.api_key import APIKey
 from app.models.document import Document
 from app.models.job_posting import JobPosting
 from app.models.profile import Profile
+from app.models.resume import Resume
 from app.models.site import Site
 from app.models.user import User
 from app.services.document_parser import parse_document
 from app.services.profile_tailor import tailor_profile
 from app.services.site_generator import build_input_json, cleanup_generation_dir, run_generator, write_input_file
+from app.services.resume_generator import (
+    build_general_prompt,
+    build_targeted_prompt,
+    build_trim_prompt,
+    parse_resume_content,
+    render_resume_html,
+    render_pdf,
+    count_pdf_pages,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -160,8 +170,131 @@ async def generate_site_job(ctx, site_id: str):
             await session.commit()
 
 
+async def generate_resume_job(ctx, resume_id: str):
+    session_factory = ctx["session_factory"]
+    async with session_factory() as session:
+        result = await session.execute(
+            select(Resume).where(Resume.id == uuid.UUID(resume_id))
+        )
+        resume = result.scalar_one_or_none()
+        if resume is None:
+            logger.error(f"Resume {resume_id} not found")
+            return
+
+        resume.status = "tailoring"
+        await session.commit()
+
+        try:
+            # Load profile
+            result = await session.execute(
+                select(Profile).where(Profile.id == resume.profile_id)
+            )
+            profile = result.scalar_one()
+            profile_data = profile.data
+
+            # Determine LLM model
+            result = await session.execute(
+                select(APIKey).where(
+                    APIKey.user_id == resume.user_id,
+                    APIKey.selected_model.isnot(None),
+                )
+            )
+            key_record = result.scalars().first()
+            if not key_record or not key_record.selected_model:
+                raise RuntimeError("No LLM model configured. Set one in Settings.")
+
+            model = key_record.selected_model
+
+            # Build prompt
+            if resume.job_posting_id:
+                result = await session.execute(
+                    select(JobPosting).where(JobPosting.id == resume.job_posting_id)
+                )
+                job_posting = result.scalar_one()
+                job_dict = {
+                    "title": job_posting.title,
+                    "company": job_posting.company,
+                    "description": job_posting.description,
+                    "requirements": job_posting.requirements,
+                }
+                messages = build_targeted_prompt(profile_data, job_dict, resume.page_target)
+            else:
+                messages = build_general_prompt(profile_data, resume.page_target)
+
+            # LLM call
+            from app.services import llm_service
+
+            response_text = await llm_service.complete(
+                model, messages, resume.user_id, session, timeout=120
+            )
+            resume_content = parse_resume_content(response_text)
+            resume.tailored_content = resume_content
+
+            # Render
+            resume.status = "rendering"
+            await session.commit()
+
+            basics = profile_data.get("basics", {})
+            html = render_resume_html(resume_content, basics, resume.theme)
+            pdf_bytes = await asyncio.to_thread(render_pdf, html)
+            actual_pages = count_pdf_pages(pdf_bytes)
+
+            # Trim loop (max 2 attempts)
+            trim_attempts = 0
+            while actual_pages > resume.page_target and trim_attempts < 2:
+                trim_attempts += 1
+                logger.info(
+                    f"Resume {resume_id}: {actual_pages} pages > target {resume.page_target}, "
+                    f"trim attempt {trim_attempts}"
+                )
+                trim_messages = build_trim_prompt(resume_content, actual_pages, resume.page_target)
+                response_text = await llm_service.complete(
+                    model, trim_messages, resume.user_id, session, timeout=120
+                )
+                resume_content = parse_resume_content(response_text)
+                resume.tailored_content = resume_content
+
+                html = render_resume_html(resume_content, basics, resume.theme)
+                pdf_bytes = await asyncio.to_thread(render_pdf, html)
+                actual_pages = count_pdf_pages(pdf_bytes)
+
+            # Save PDF to disk
+            resume_dir = Path(settings.output_dir) / "resumes" / str(resume.user_id)
+            resume_dir.mkdir(parents=True, exist_ok=True)
+            pdf_path = resume_dir / f"{resume.id}.pdf"
+            pdf_path.write_bytes(pdf_bytes)
+
+            # If general resume, also copy to portfolio output for public download
+            if resume.job_posting_id is None:
+                result = await session.execute(
+                    select(User).where(User.id == resume.user_id)
+                )
+                user = result.scalar_one()
+                if user.username:
+                    public_dir = Path(settings.output_dir) / user.username
+                    public_dir.mkdir(parents=True, exist_ok=True)
+                    public_pdf = public_dir / "resume.pdf"
+                    public_pdf.write_bytes(pdf_bytes)
+                    logger.info(f"Copied general resume to {public_pdf}")
+
+            # Success
+            resume.file_path = str(pdf_path)
+            resume.actual_pages = actual_pages
+            resume.status = "ready"
+            resume.generated_at = datetime.now(timezone.utc)
+            logger.info(f"Generated resume {resume_id}: {actual_pages} pages")
+
+        except Exception as e:
+            logger.error(f"Failed to generate resume {resume_id}: {e}")
+            resume.status = "failed"
+            resume.error_message = str(e)
+
+        finally:
+            await session.commit()
+
+
 class WorkerSettings:
-    functions = [parse_document_job, generate_site_job]
+    functions = [parse_document_job, generate_site_job, generate_resume_job]
     on_startup = startup
     on_shutdown = shutdown
     redis_settings = get_redis_settings()
