@@ -19,6 +19,8 @@ import type {
   PortfolioGenerateRequest,
   TargetedGenerateRequest,
   SiteResponse,
+  PreviewRequest,
+  PreviewResponse,
   APIKeySaveRequest,
   APIKeySaveResponse,
   APIKeyStatusResponse,
@@ -267,6 +269,21 @@ export async function generateTargeted(
 
 export async function deleteSite(id: string): Promise<void> {
   await api.delete(`/api/sites/${id}`);
+}
+
+// Preview
+export async function createPreview(data: PreviewRequest): Promise<PreviewResponse> {
+  const res = await api.post<PreviewResponse>('/api/preview/', data);
+  return res.data;
+}
+
+export async function deletePreview(previewId: string): Promise<void> {
+  await api.delete(`/api/preview/${previewId}`);
+}
+
+export function getPreviewUrl(previewId: string): string {
+  const baseUrl = import.meta.env.VITE_API_URL || '';
+  return `${baseUrl}/api/preview/${previewId}`;
 }
 
 // Settings

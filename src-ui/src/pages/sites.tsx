@@ -6,6 +6,8 @@ import {
   useDeleteSite,
 } from '@/hooks/use-sites';
 import { useJobPostings } from '@/hooks/use-job-postings';
+import { ThemeGallery } from '@/components/ThemeGallery';
+import { PreviewModal } from '@/components/PreviewModal';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -43,17 +45,10 @@ import {
   RefreshCw,
   Loader2,
   AlertTriangle,
+  Eye,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import type { SiteResponse } from '@/types/api';
-
-const THEMES = [
-  { value: 'onyx', label: 'Onyx' },
-  { value: 'coral', label: 'Coral' },
-  { value: 'serene', label: 'Serene' },
-  { value: 'jade', label: 'Jade' },
-  { value: 'quartz', label: 'Quartz' },
-];
 
 function statusBadge(status: string) {
   switch (status) {
@@ -93,10 +88,12 @@ export default function SitesPage() {
 
   const [showPortfolioDialog, setShowPortfolioDialog] = useState(false);
   const [showTargetedDialog, setShowTargetedDialog] = useState(false);
-  const [selectedTheme, setSelectedTheme] = useState(THEMES[0].value);
+  const [selectedTheme, setSelectedTheme] = useState('onyx');
   const [selectedJobId, setSelectedJobId] = useState('');
   const [deleteTarget, setDeleteTarget] = useState<SiteResponse | null>(null);
   const [genError, setGenError] = useState('');
+  const [showPreview, setShowPreview] = useState(false);
+  const [previewSiteType, setPreviewSiteType] = useState<'portfolio' | 'targeted'>('portfolio');
 
   const handleGeneratePortfolio = async () => {
     setGenError('');
@@ -302,35 +299,23 @@ export default function SitesPage() {
 
         {/* Generate Portfolio Dialog */}
         <Dialog open={showPortfolioDialog} onOpenChange={setShowPortfolioDialog}>
-          <DialogContent>
+          <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
                 {sites?.find((s) => s.type === 'portfolio') ? 'Regenerate Portfolio Site' : 'Generate Portfolio Site'}
               </DialogTitle>
-              <DialogDescription>
-                {sites?.find((s) => s.type === 'portfolio')
-                  ? 'This will regenerate your portfolio site with the latest profile data.'
-                  : 'Create your public portfolio site from your synthesized profile.'}
-              </DialogDescription>
+              <DialogDescription>Choose a theme.</DialogDescription>
             </DialogHeader>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Theme</label>
-              <Select value={selectedTheme} onValueChange={setSelectedTheme}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {THEMES.map((t) => (
-                    <SelectItem key={t.value} value={t.value}>
-                      {t.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <ThemeGallery selected={selectedTheme} onSelect={setSelectedTheme} variant="portfolio" />
             <DialogFooter>
-              <Button variant="outline" onClick={() => setShowPortfolioDialog(false)}>
-                Cancel
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setPreviewSiteType('portfolio');
+                  setShowPreview(true);
+                }}
+              >
+                <Eye className="mr-2 h-4 w-4" /> Preview
               </Button>
               <Button onClick={handleGeneratePortfolio} disabled={genPortfolio.isPending}>
                 {genPortfolio.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -342,7 +327,7 @@ export default function SitesPage() {
 
         {/* Generate Targeted Dialog */}
         <Dialog open={showTargetedDialog} onOpenChange={setShowTargetedDialog}>
-          <DialogContent>
+          <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Generate Targeted Site</DialogTitle>
               <DialogDescription>
@@ -374,25 +359,17 @@ export default function SitesPage() {
                   </p>
                 )}
               </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Theme</label>
-                <Select value={selectedTheme} onValueChange={setSelectedTheme}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {THEMES.map((t) => (
-                      <SelectItem key={t.value} value={t.value}>
-                        {t.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              <ThemeGallery selected={selectedTheme} onSelect={setSelectedTheme} variant="targeted" />
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setShowTargetedDialog(false)}>
-                Cancel
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setPreviewSiteType('targeted');
+                  setShowPreview(true);
+                }}
+              >
+                <Eye className="mr-2 h-4 w-4" /> Preview
               </Button>
               <Button
                 onClick={handleGenerateTargeted}
@@ -424,6 +401,22 @@ export default function SitesPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Preview Modal */}
+        <PreviewModal
+          open={showPreview}
+          onOpenChange={setShowPreview}
+          theme={selectedTheme}
+          siteType={previewSiteType}
+          jobPostingId={previewSiteType === 'targeted' ? selectedJobId : undefined}
+          onGenerate={() => {
+            if (previewSiteType === 'portfolio') {
+              handleGeneratePortfolio();
+            } else {
+              handleGenerateTargeted();
+            }
+          }}
+        />
       </div>
     </TooltipProvider>
   );

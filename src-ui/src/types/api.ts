@@ -221,6 +221,17 @@ export interface SiteResponse {
   updated_at: string;
 }
 
+// Preview
+export interface PreviewRequest {
+  theme: string;
+  site_type: string;
+  job_posting_id?: string;
+}
+
+export interface PreviewResponse {
+  preview_id: string;
+}
+
 // Settings
 export interface APIKeySaveRequest {
   provider: string;
