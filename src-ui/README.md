@@ -1,6 +1,6 @@
-# Professional Website Builder - Web UI
+# Vitae - Web UI
 
-This is the React-based web application for the Professional Website Builder. It has been converted from a Tauri desktop application to a standalone web application.
+This is the React-based web application for Vitae. It has been converted from a Tauri desktop application to a standalone web application.
 
 ## Architecture
 

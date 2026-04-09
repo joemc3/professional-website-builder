@@ -106,7 +106,7 @@ The JSON data must follow the schema defined in `app/types/portfolio.ts`:
 }
 ```
 
-See `/home/user/professional-website-builder/user-data/session.json` for a complete example.
+See `/home/user/vitae/user-data/session.json` for a complete example.
 
 ## Themes
 
