@@ -42,7 +42,7 @@ Public Sites (Nginx)  ←── serves ────┘
 ## Monorepo Structure
 
 ```
-/professional-website-builder/
+/vitae/
 ├── src-api/          # Python REST API (FastAPI + SQLAlchemy + Alembic)
 │   ├── app/
 │   │   ├── main.py           # FastAPI app, middleware, startup lifespan
@@ -280,7 +280,7 @@ docker compose --profile dev logs api-dev
 curl http://localhost:8000/health
 
 # Access database shell
-docker compose --profile dev exec postgres-dev psql -U pwbuser professional_website_builder
+docker compose --profile dev exec postgres-dev psql -U vitae vitae
 
 # Rebuild without cache
 docker compose --profile dev build --no-cache
