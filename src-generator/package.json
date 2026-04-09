@@ -1,8 +1,8 @@
 {
-  "name": "professional-website-generator",
+  "name": "vitae-generator",
   "version": "1.0.0",
   "private": true,
-  "description": "Next.js static site generator for professional portfolio websites",
+  "description": "Next.js static site generator for Vitae portfolio websites",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

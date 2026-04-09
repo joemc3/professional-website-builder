@@ -3,7 +3,7 @@ import './globals.css';
 
 export const metadata: Metadata = {
   title: 'Professional Portfolio',
-  description: 'Generated with Professional Website Builder',
+  description: 'Generated with Vitae',
 };
 
 export default function RootLayout({
