@@ -54,7 +54,7 @@ function SidebarNav() {
   return (
     <div className="flex h-full w-64 flex-col border-r bg-card">
       <div className="p-6">
-        <h1 className="text-lg font-semibold tracking-tight">PWB Admin</h1>
+        <h1 className="text-lg font-semibold tracking-tight">Vitae Admin</h1>
       </div>
 
       <nav className="flex-1 space-y-1 px-3">
@@ -113,7 +113,7 @@ export function AppLayout() {
             <SidebarNav />
           </SheetContent>
         </Sheet>
-        <h1 className="ml-3 text-lg font-semibold">PWB Admin</h1>
+        <h1 className="ml-3 text-lg font-semibold">Vitae Admin</h1>
       </div>
 
       {/* Main content */}
