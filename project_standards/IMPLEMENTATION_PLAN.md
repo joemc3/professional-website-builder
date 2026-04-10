@@ -4,11 +4,11 @@ tags:
   - project-management
   - roadmap
 ---
-# Implementation Plan - Professional Website Builder
+# Implementation Plan - Vitae
 
 ## 1. Introduction
 
-This document outlines the comprehensive, phased implementation plan for the Professional Website Builder application. The goal is to progress from the initial design and specification documents to a complete, production-ready application that fulfills all requirements outlined in the PRD.
+This document outlines the comprehensive, phased implementation plan for the Vitae application. The goal is to progress from the initial design and specification documents to a complete, production-ready application that fulfills all requirements outlined in the PRD.
 
 The project will be broken down into distinct phases, allowing for iterative development, testing, and refinement.
 

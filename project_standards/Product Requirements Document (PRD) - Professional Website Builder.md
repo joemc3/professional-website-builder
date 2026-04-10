@@ -4,7 +4,7 @@ tags:
   - project-management
   - product-specification
 ---
-# Product Requirements Document (PRD) - Professional Website Builder
+# Product Requirements Document (PRD) - Vitae
 
 ## 1. Introduction & Vision
 

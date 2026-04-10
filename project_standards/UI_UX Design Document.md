@@ -4,11 +4,11 @@ tags:
   - design
   - specification
 ---
-# UI/UX Design Document - Professional Website Builder
+# UI/UX Design Document - Vitae
 
 ## 1. Introduction
 
-This document outlines the user interface (UI) design, user experience (UX) flow, and key interactive components for the Professional Website Builder. It serves as a bridge between the abstract specifications and the final, user-facing application.
+This document outlines the user interface (UI) design, user experience (UX) flow, and key interactive components for Vitae. It serves as a bridge between the abstract specifications and the final, user-facing application.
 
 ## 2. Core Design Principles
 
@@ -39,7 +39,7 @@ To provide a complete user experience, the UI must account for states beyond the
     **Mockup: Modal Spinner**
     ```
     +------------------------------------------------------------------+
-    | Professional Website Builder                                [X]|
+    | Vitae                                                       [X]|
     +------------------------------------------------------------------+
     |                                                                  |
     |                        Processing...                             |
@@ -94,7 +94,7 @@ To provide a complete user experience, the UI must account for states beyond the
 #### Mockup
 ```
 +--------------------------------------------------------------------------------+
-| Professional Website Builder                                            [⚙️] |
+| Vitae                                                                   [⚙️] |
 +------------------------------------------------------+-------------------------+
 |                                                      |                         |
 |   +----------------------------------------------+   | Choose a method:        |

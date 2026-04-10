@@ -4,7 +4,7 @@ tags:
   - specification
   - json-schema
 ---
-# Data Structure Specification - Professional Website Builder
+# Data Structure Specification - Vitae
 
 ## 1. Introduction
 

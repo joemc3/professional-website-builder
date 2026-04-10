@@ -4,11 +4,11 @@ tags:
   - architecture
   - system-design
 ---
-# Technical Specification - Professional Website Builder
+# Technical Specification - Vitae
 
 ## 1. Introduction
 
-This document outlines the proposed technical architecture, technology stack, and data flow for the Professional Website Builder desktop application, focusing on the MVP+ scope.
+This document outlines the proposed technical architecture, technology stack, and data flow for the Vitae desktop application, focusing on the MVP+ scope.
 
 ## 2. Desktop Application Framework
 
@@ -53,7 +53,7 @@ The Tauri Rust backend will be responsible for invoking and managing data extrac
 A monorepo structure will be used to manage the different parts of the application.
 
 ```
-/professional-website-builder/
+/vitae/
 ├── src-tauri/              # Tauri Rust backend code
 │   ├── src/
 │   └── tauri.conf.json
