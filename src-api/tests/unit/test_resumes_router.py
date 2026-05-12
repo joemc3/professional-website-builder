@@ -37,7 +37,7 @@ def mock_db():
 class TestListResumes:
     @pytest.mark.asyncio
     async def test_requires_auth(self, client):
-        resp = await client.get("/api/resumes/")
+        resp = await client.get("/api/resumes")
         assert resp.status_code == 401
 
 

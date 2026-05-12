@@ -77,7 +77,7 @@ class TestProfileSynthesis:
         from io import BytesIO
         file = BytesIO(b"# Jane Doe\nSenior Engineer with 10 years experience.")
         resp = await client.post(
-            "/api/documents/",
+            "/api/documents",
             headers=headers,
             files={"files": ("resume.md", file, "text/markdown")},
         )
@@ -127,7 +127,7 @@ class TestProfileCRUD:
         token = await _register_and_get_token(client)
         headers = _auth_headers(token)
 
-        resp = await client.get("/api/profile/", headers=headers)
+        resp = await client.get("/api/profile", headers=headers)
         assert resp.status_code == 404
 
     @pytest.mark.asyncio
@@ -139,13 +139,13 @@ class TestProfileCRUD:
             "basics": {"name": "Jane Doe", "title": "Engineer"},
             "skills": [{"category": "Languages", "items": ["Python"]}],
         }
-        resp = await client.put("/api/profile/", headers=headers, json=profile_data)
+        resp = await client.put("/api/profile", headers=headers, json=profile_data)
         assert resp.status_code == 200
         body = resp.json()
         assert body["data"]["basics"]["name"] == "Jane Doe"
 
         # GET should return same profile
-        resp = await client.get("/api/profile/", headers=headers)
+        resp = await client.get("/api/profile", headers=headers)
         assert resp.status_code == 200
         assert resp.json()["data"]["basics"]["name"] == "Jane Doe"
 
@@ -156,7 +156,7 @@ class TestProfileCRUD:
 
         # Create profile first
         await client.put(
-            "/api/profile/",
+            "/api/profile",
             headers=headers,
             json={
                 "basics": {"name": "Jane Doe", "title": "Engineer", "email": "jane@test.com"},
@@ -166,7 +166,7 @@ class TestProfileCRUD:
 
         # Patch only basics.summary
         resp = await client.patch(
-            "/api/profile/",
+            "/api/profile",
             headers=headers,
             json={"basics": {"summary": "Updated summary."}},
         )
@@ -182,7 +182,7 @@ class TestProfileCRUD:
         headers = _auth_headers(token)
 
         resp = await client.patch(
-            "/api/profile/",
+            "/api/profile",
             headers=headers,
             json={"basics": {"name": "Jane"}},
         )

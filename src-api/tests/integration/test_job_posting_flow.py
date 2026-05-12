@@ -67,7 +67,7 @@ class TestJobPostingCRUD:
         headers = _auth_headers(token)
 
         resp = await client.post(
-            "/api/job-postings/",
+            "/api/job-postings",
             headers=headers,
             json={
                 "title": "Senior Engineer",
@@ -79,7 +79,7 @@ class TestJobPostingCRUD:
         posting_id = resp.json()["id"]
 
         # List
-        resp = await client.get("/api/job-postings/", headers=headers)
+        resp = await client.get("/api/job-postings", headers=headers)
         assert resp.status_code == 200
         assert len(resp.json()) == 1
         assert resp.json()[0]["id"] == posting_id
@@ -90,7 +90,7 @@ class TestJobPostingCRUD:
         headers = _auth_headers(token)
 
         resp = await client.post(
-            "/api/job-postings/",
+            "/api/job-postings",
             headers=headers,
             json={
                 "title": "Engineer",
@@ -117,7 +117,7 @@ class TestJobPostingCRUD:
         headers = _auth_headers(token)
 
         resp = await client.post(
-            "/api/job-postings/",
+            "/api/job-postings",
             headers=headers,
             json={
                 "title": "Engineer",

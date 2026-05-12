@@ -69,7 +69,7 @@ async def _setup_user_with_profile(client, token, headers):
     assert resp.status_code == 200
 
     resp = await client.put(
-        "/api/profile/",
+        "/api/profile",
         headers=headers,
         json={
             "basics": {"name": "Jane Doe", "title": "Engineer"},
@@ -86,7 +86,7 @@ class TestSiteGeneration:
         headers = _auth_headers(token)
 
         await client.put(
-            "/api/profile/",
+            "/api/profile",
             headers=headers,
             json={"basics": {"name": "Jane Doe"}},
         )
@@ -149,7 +149,7 @@ class TestSiteGeneration:
             json={"theme": "minimal"},
         )
 
-        resp = await client.get("/api/sites/", headers=headers)
+        resp = await client.get("/api/sites", headers=headers)
         assert resp.status_code == 200
         assert len(resp.json()) >= 1
 

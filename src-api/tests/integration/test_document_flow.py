@@ -77,7 +77,7 @@ class TestDocumentUpload:
         token = await _register_and_get_token(client)
         with open(FIXTURES_DIR / "sample.md", "rb") as f:
             resp = await client.post(
-                "/api/documents/",
+                "/api/documents",
                 files={"files": ("resume.md", f, "text/markdown")},
                 headers=_auth_headers(token),
             )
@@ -92,7 +92,7 @@ class TestDocumentUpload:
         client, _, _ = test_env
         token = await _register_and_get_token(client)
         resp = await client.post(
-            "/api/documents/",
+            "/api/documents",
             files={"files": ("evil.exe", b"binary stuff", "application/x-msdownload")},
             headers=_auth_headers(token),
         )
@@ -101,7 +101,7 @@ class TestDocumentUpload:
     async def test_upload_requires_auth(self, test_env):
         client, _, _ = test_env
         resp = await client.post(
-            "/api/documents/",
+            "/api/documents",
             files={"files": ("test.md", b"# Test", "text/markdown")},
         )
         assert resp.status_code == 401 or resp.status_code == 403
@@ -115,7 +115,7 @@ class TestDocumentLifecycle:
 
         with open(FIXTURES_DIR / "sample.md", "rb") as f:
             resp = await client.post(
-                "/api/documents/",
+                "/api/documents",
                 files={"files": ("resume.md", f, "text/markdown")},
                 headers=headers,
             )
@@ -138,7 +138,7 @@ class TestDocumentLifecycle:
         assert data["status"] == "completed"
         assert "John Doe" in data["parsed_text"]
 
-        resp = await client.get("/api/documents/", headers=headers)
+        resp = await client.get("/api/documents", headers=headers)
         assert resp.status_code == 200
         assert len(resp.json()) >= 1
         assert any(d["id"] == doc_id for d in resp.json())
@@ -160,7 +160,7 @@ class TestDocumentOwnership:
 
         with open(FIXTURES_DIR / "sample.md", "rb") as f:
             resp = await client.post(
-                "/api/documents/",
+                "/api/documents",
                 files={"files": ("resume.md", f, "text/markdown")},
                 headers=_auth_headers(token1),
             )

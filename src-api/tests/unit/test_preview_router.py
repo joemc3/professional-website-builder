@@ -18,7 +18,7 @@ async def client():
 class TestCreatePreview:
     @pytest.mark.asyncio
     async def test_requires_auth(self, client):
-        resp = await client.post("/api/preview/", json={"theme": "onyx"})
+        resp = await client.post("/api/preview", json={"theme": "onyx"})
         assert resp.status_code == 401
 
 
