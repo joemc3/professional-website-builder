@@ -12,6 +12,12 @@ This file is the canonical list. If the repo ever goes public, anything worth su
 - **Trigger to pick up:** Ready to invite strangers, or wanting a true "anyone can try Vitae" demo URL.
 - **Rough scope:** Invite-code flow (tables + API + admin UI for issuing codes), or email-verification flow (SMTP integration + verification tokens); rate limiting middleware on auth endpoints; account deletion/cooldown policy; admin view for managing users.
 
+### Hide "Create one" link in the UI when registration is disabled
+- **Why deferred:** Cosmetic. The API correctly returns 403, so clicking the link from the sign-in page just produces an error — no functional risk, just a poor UX touch on a prod instance that won't accept sign-ups.
+- **Today's behavior:** `src-ui/src/pages/SignIn.tsx` (or equivalent) renders an unconditional "Don't have an account? Create one" link. Anyone landing on the login page sees an option that will fail.
+- **Trigger to pick up:** Bundled with the public-registration work above, OR earlier if you want the prod sign-in page to look clean before sharing the URL.
+- **Rough scope:** Expose `REGISTRATION_ENABLED` as a public flag via a small `/api/config` endpoint (or read at build time and bake in); conditional render of the link + the standalone `/register` route.
+
 ## Observability
 
 ### Log shipping + metrics
@@ -28,6 +34,18 @@ This file is the canonical list. If the repo ever goes public, anything worth su
 - **Rough scope:** Nightly cron container running `pg_dump` + uploads tar, encrypted with `age` or `gpg`, shipped to S3/R2/Backblaze with 30-day retention; documented restore procedure; periodic restore test.
 
 ## Infrastructure
+
+### Pangolin / Traefik / Gerbil reboot fragility
+- **Why deferred:** This is VPS-level infrastructure (Pangolin's own stack, not Vitae's), but it affects Vitae because Vitae sits behind Pangolin. Diagnosis is unfinished — restart policies are already `unless-stopped`, so the real cause is something else (Docker startup ordering when traefik joins gerbil's netns, plus stale iptables NAT state surviving daemon restarts).
+- **Today's behavior:** Every Docker daemon restart or VPS reboot has a non-trivial chance of leaving `gerbil` and `traefik` exited with no automatic recovery. Manual reset is: `docker ps -q | xargs docker stop && sleep 3 && docker start gerbil traefik <other-stack-containers>`. Until that's done, no Pangolin-fronted service is reachable (Vitae included).
+- **Trigger to pick up:** Next time it happens (which it will), spend an hour actually diagnosing. Or sooner if the prod stack matters enough that a 5-minute outage post-reboot is unacceptable.
+- **Rough scope:** Investigate exit reasons in `journalctl -u docker` after a reboot; check whether Pangolin's compose file has a `depends_on` ordering for gerbil → traefik that's actually respected on daemon restart; possibly add a systemd unit that runs `docker compose up -d` against Pangolin's stack on boot as a backstop; or pin gerbil's port mappings to a known-stable host IP. This affects every Pangolin-fronted service on the VPS, not just Vitae.
+
+### vitae-ui container shows "(unhealthy)" despite working
+- **Why deferred:** Cosmetic — the container serves traffic fine; only `docker ps` reports unhealthy. Pangolin doesn't gate on the Docker healthcheck.
+- **Today's behavior:** `src-ui/Dockerfile` defines a HEALTHCHECK that probably hits an endpoint the prod nginx config doesn't serve (or hits it with wrong headers). Result: container is forever "(unhealthy)" even though `curl http://vitae-ui/` works.
+- **Trigger to pick up:** Adding container-level health gating anywhere (e.g. orchestrator with healthcheck-aware routing), or just wanting clean `docker ps` output.
+- **Rough scope:** Read `src-ui/Dockerfile`'s HEALTHCHECK directive; either point it at a path nginx will return 200 for (e.g. `/`), or remove it and rely on Pangolin's health probes. ~5-line change.
 
 ### Staging environment
 - **Why deferred:** Single VPS, single user iterating. Push-to-main → prod is the workflow. Local dev compose serves as "staging."
