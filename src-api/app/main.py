@@ -74,6 +74,7 @@ app.include_router(resumes.router)
 app.include_router(preview.router)
 
 
+@app.get("/api/health")
 @app.get("/health")
 async def health_check():
     try:
