@@ -79,9 +79,8 @@ jobs:
         run: |
           ssh ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} bash <<'EOF'
           set -euo pipefail
-          cd /opt/vitae
-          sudo docker compose -f docker-compose.prod.yml pull
-          sudo docker compose -f docker-compose.prod.yml up -d --remove-orphans
+          sudo docker compose -f /opt/vitae/docker-compose.prod.yml pull
+          sudo docker compose -f /opt/vitae/docker-compose.prod.yml up -d --remove-orphans
           sudo docker image prune -f
           EOF
 
