@@ -111,7 +111,7 @@ services:
     container_name: vitae-public-sites
     restart: unless-stopped
     volumes:
-      - vitae-output:/usr/share/nginx/html:ro
+      - vitae-output:/data/output:ro
       - ./public-sites.conf:/etc/nginx/conf.d/default.conf:ro
     networks:
       - pangolin
