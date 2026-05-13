@@ -11,13 +11,6 @@ from app.main import app
 from app.models import Base
 
 
-@pytest.fixture(autouse=True)
-def enable_registration():
-    """Existing auth-flow tests register users — flag must be on."""
-    with patch("app.routers.auth.settings.registration_enabled", True):
-        yield
-
-
 @pytest.fixture(scope="module")
 def postgres_container():
     with PostgresContainer("postgres:16-alpine") as postgres:

@@ -1,6 +1,6 @@
 import uuid
 from pathlib import Path
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock
 
 import pytest
 from httpx import ASGITransport, AsyncClient
@@ -15,13 +15,6 @@ from app.models.document import Document
 from app.services.document_parser import parse_document
 
 FIXTURES_DIR = Path(__file__).parent.parent / "fixtures"
-
-
-@pytest.fixture(autouse=True)
-def enable_registration():
-    """Existing auth-flow tests register users — flag must be on."""
-    with patch("app.routers.auth.settings.registration_enabled", True):
-        yield
 
 
 @pytest.fixture(scope="module")

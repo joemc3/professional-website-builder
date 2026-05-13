@@ -1,5 +1,3 @@
-from unittest.mock import patch
-
 import pytest
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
@@ -9,13 +7,6 @@ from app.main import app
 from app.models import Base
 
 from testcontainers.postgres import PostgresContainer
-
-
-@pytest.fixture(autouse=True)
-def enable_registration():
-    """Existing auth-flow tests register users — flag must be on."""
-    with patch("app.routers.auth.settings.registration_enabled", True):
-        yield
 
 
 @pytest.fixture(scope="module")

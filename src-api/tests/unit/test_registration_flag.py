@@ -42,7 +42,8 @@ class TestRegistrationFlag:
                     "/api/auth/register",
                     json={"email": "new@test.com", "password": "supersecret"},
                 )
-            # 201 (created) or 409 (conflict if test DB persists). Anything except 403/307 proves the gate isn't blocking.
-            assert resp.status_code not in (403, 307)
+            # DB is mocked to return no existing user, so happy path should yield 201.
+            assert resp.status_code == 201
+            assert "access_token" in resp.json()
         finally:
             app.dependency_overrides.pop(get_db, None)
